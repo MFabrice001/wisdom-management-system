@@ -1,15 +1,141 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// User model - for authentication and user management
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          Role      @default(USER)
+  profileImage  String?
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  wisdoms       Wisdom[]
+  comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ELDER
+  ADMIN
+}
+
+// Wisdom model - main content (stories, proverbs, advice)
+model Wisdom {
+  id            String      @id @default(cuid())
+  title         String
+  content       String      @db.Text
+  category      Category
+  language      Language    @default(KINYARWANDA)
+  audioUrl      String?
+  imageUrl      String?
+  tags          String[]
+  views         Int         @default(0)
+  isPublished   Boolean     @default(true)
+  isFeatured    Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Author relation
+  authorId      String
+  author        User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  
+  @@index([category])
+  @@index([language])
+  @@index([createdAt])
+  @@map("wisdoms")
+}
+
+enum Category {
+  MARRIAGE_GUIDANCE
+  AGRICULTURE
+  CONFLICT_RESOLUTION
+  HEALTH_WELLNESS
+  MORAL_CONDUCT
+  TRADITIONAL_CEREMONIES
+  PROVERBS
+  STORIES
+  LIFE_LESSONS
+  COMMUNITY_VALUES
+}
+
+enum Language {
+  KINYARWANDA
+  ENGLISH
+  FRENCH
+}
+
+// Comment model - for discussions
+model Comment {
+  id          String    @id @default(cuid())
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  wisdomId    String
+  wisdom      Wisdom    @relation(fields: [wisdomId], references: [id], onDelete: Cascade)
+  
+  @@index([wisdomId])
+  @@index([userId])
+  @@map("comments")
+}
+
+// Like model - for tracking likes
+model Like {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  wisdomId    String
+  wisdom      Wisdom    @relation(fields: [wisdomId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, wisdomId])
+  @@index([wisdomId])
+  @@map("likes")
+}
+
+// Bookmark model - for saving favorite wisdom
+model Bookmark {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  wisdomId    String
+  wisdom      Wisdom    @relation(fields: [wisdomId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, wisdomId])
+  @@index([userId])
+  @@map("bookmarks")
 }
