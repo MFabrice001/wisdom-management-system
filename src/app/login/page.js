@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, Shield, User as UserIcon } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState('USER');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -45,8 +46,23 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error);
       } else {
-        // Redirect to wisdom page on success
-        router.push('/wisdom');
+        // Check if user role matches selected role
+        const response = await fetch('/api/user/check-role');
+        const data = await response.json();
+        
+        if (selectedRole === 'ADMIN' && data.role !== 'ADMIN') {
+          setError('You do not have admin privileges');
+          await signIn('credentials', { redirect: false }); // Sign out
+          setLoading(false);
+          return;
+        }
+        
+        // Redirect based on role
+        if (data.role === 'ADMIN') {
+          router.push('/admin');
+        } else {
+          router.push('/wisdom');
+        }
         router.refresh();
       }
     } catch (error) {
@@ -66,6 +82,50 @@ export default function LoginPage() {
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
           <p className="mt-2 text-gray-600">Sign in to access your wisdom library</p>
+        </div>
+
+        {/* Role Selection */}
+        <div className="mb-6">
+          <p className="text-sm font-medium text-gray-700 mb-3 text-center">Select Login Type</p>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setSelectedRole('USER')}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                selectedRole === 'USER'
+                  ? 'border-green-600 bg-green-50'
+                  : 'border-gray-300 hover:border-green-300'
+              }`}
+            >
+              <UserIcon className={`w-8 h-8 mx-auto mb-2 ${
+                selectedRole === 'USER' ? 'text-green-600' : 'text-gray-400'
+              }`} />
+              <p className={`text-sm font-medium ${
+                selectedRole === 'USER' ? 'text-green-600' : 'text-gray-600'
+              }`}>
+                User Login
+              </p>
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => setSelectedRole('ADMIN')}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                selectedRole === 'ADMIN'
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-gray-300 hover:border-blue-300'
+              }`}
+            >
+              <Shield className={`w-8 h-8 mx-auto mb-2 ${
+                selectedRole === 'ADMIN' ? 'text-blue-600' : 'text-gray-400'
+              }`} />
+              <p className={`text-sm font-medium ${
+                selectedRole === 'ADMIN' ? 'text-blue-600' : 'text-gray-600'
+              }`}>
+                Admin Login
+              </p>
+            </button>
+          </div>
         </div>
 
         {/* Form Card */}
@@ -147,7 +207,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+              className={`w-full py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2 ${
+                selectedRole === 'ADMIN'
+                  ? 'bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400'
+                  : 'bg-green-600 hover:bg-green-700 disabled:bg-gray-400'
+              } text-white`}
             >
               {loading ? (
                 <>
@@ -156,8 +220,8 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  <LogIn className="w-5 h-5" />
-                  <span>Sign In</span>
+                  {selectedRole === 'ADMIN' ? <Shield className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+                  <span>Sign In as {selectedRole === 'ADMIN' ? 'Admin' : 'User'}</span>
                 </>
               )}
             </button>
@@ -172,13 +236,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Demo Account Info (Optional - Remove in production) */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800 text-center">
-            <strong>Demo:</strong> Create an account to get started!
-          </p>
         </div>
       </div>
     </div>
