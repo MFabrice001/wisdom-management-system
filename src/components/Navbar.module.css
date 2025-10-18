@@ -73,10 +73,123 @@
   color: #16a34a;
 }
 
+.navLink.active {
+  color: #16a34a;
+  font-weight: 600;
+}
+
 .navUser {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+/* Language Button */
+.languageButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.languageButton:hover {
+  background: #f3f4f6;
+  border-color: #16a34a;
+  color: #16a34a;
+}
+
+/* Profile Dropdown */
+.profileDropdown {
+  position: relative;
+}
+
+.userAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: #22c55e;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.userAvatar:hover {
+  border-color: #16a34a;
+  transform: scale(1.05);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 240px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.dropdownHeader {
+  padding: 1rem;
+  background: #f9fafb;
+}
+
+.userName {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.userEmail {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #374151;
+  text-decoration: none;
+  transition: background 0.2s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.dropdownItem:hover {
+  background: #f3f4f6;
+}
+
+.logoutButton {
+  color: #dc2626;
+}
+
+.logoutButton:hover {
+  background: #fee2e2;
 }
 
 .userButton {
@@ -96,19 +209,6 @@
 
 .userButton:hover {
   background: #15803d;
-}
-
-.userAvatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  background: #22c55e;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .mobileMenuButton {

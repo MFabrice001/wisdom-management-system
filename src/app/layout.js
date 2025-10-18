@@ -1,9 +1,9 @@
-// src/app/layout.js
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Providers from '@/components/Providers';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -28,11 +28,13 @@ export default function RootLayout({ children }) {
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} antialiased`}>
         <Providers>
-          <Navbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Footer />
+          <LanguageProvider>
+            <Navbar />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <Footer />
+          </LanguageProvider>
         </Providers>
       </body>
     </html>
