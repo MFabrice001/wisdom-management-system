@@ -1,10 +1,9 @@
 // src/app/api/wisdom/[id]/bookmark/route.js
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import prisma from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 
 export async function POST(request, { params }) {
   try {

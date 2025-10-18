@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Plus, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
+import styles from './page.module.css';
 
 export default function AddWisdomPage() {
   const { data: session, status } = useSession();
@@ -130,52 +132,51 @@ export default function AddWisdomPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-green-600" />
+      <div className={styles.page}>
+        <div className={styles.loading}>
+          <Loader2 className={styles.spinner} size={48} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+    <div className={styles.page}>
+      <div className={styles.container}>
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
-            <Plus className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Share Your Wisdom</h1>
-          <p className="mt-2 text-gray-600">
+        <div className={styles.header}>
+          <h1 className={styles.title}>Share Your Wisdom</h1>
+          <p className={styles.subtitle}>
             Contribute to preserving our cultural heritage
           </p>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        {/* Form */}
+        <div className={styles.form}>
           {/* Success Message */}
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className={styles.success}>
+              <CheckCircle size={20} />
               <div>
-                <p className="text-green-800 font-semibold">Wisdom Added Successfully!</p>
-                <p className="text-green-600 text-sm">Redirecting to library...</p>
+                <p><strong>Wisdom Added Successfully!</strong></p>
+                <p>Redirecting to library...</p>
               </div>
             </div>
           )}
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-800">{error}</p>
+            <div className={styles.error}>
+              <AlertCircle size={20} />
+              <p>{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit}>
             {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Title *
+            <div className={styles.formGroup}>
+              <label htmlFor="title" className={styles.label}>
+                Title <span className={styles.required}>*</span>
               </label>
               <input
                 id="title"
@@ -183,49 +184,45 @@ export default function AddWisdomPage() {
                 type="text"
                 value={formData.title}
                 onChange={handleChange}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                className={styles.input}
                 placeholder="Enter a descriptive title"
                 disabled={loading || success}
-                style={{ color: 'black' }}
               />
             </div>
 
             {/* Content */}
-            <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                Content *
+            <div className={styles.formGroup}>
+              <label htmlFor="content" className={styles.label}>
+                Content <span className={styles.required}>*</span>
               </label>
               <textarea
                 id="content"
                 name="content"
-                rows="8"
                 value={formData.content}
                 onChange={handleChange}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                className={styles.textarea}
                 placeholder="Share the wisdom, story, or proverb..."
                 disabled={loading || success}
-                style={{ color: 'black' }}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className={`${styles.charCount} ${formData.content.length < 20 ? styles.charCountError : ''}`}>
                 {formData.content.length} characters (minimum 20)
               </p>
             </div>
 
             {/* Category and Language */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               {/* Category */}
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                  Category *
+              <div className={styles.formGroup}>
+                <label htmlFor="category" className={styles.label}>
+                  Category <span className={styles.required}>*</span>
                 </label>
                 <select
                   id="category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black"
+                  className={styles.select}
                   disabled={loading || success}
-                  style={{ color: 'black' }}
                 >
                   {categories.map(cat => (
                     <option key={cat.value} value={cat.value}>
@@ -236,18 +233,17 @@ export default function AddWisdomPage() {
               </div>
 
               {/* Language */}
-              <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                  Language *
+              <div className={styles.formGroup}>
+                <label htmlFor="language" className={styles.label}>
+                  Language <span className={styles.required}>*</span>
                 </label>
                 <select
                   id="language"
                   name="language"
                   value={formData.language}
                   onChange={handleChange}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black"
+                  className={styles.select}
                   disabled={loading || success}
-                  style={{ color: 'black' }}
                 >
                   {languages.map(lang => (
                     <option key={lang.value} value={lang.value}>
@@ -259,11 +255,9 @@ export default function AddWisdomPage() {
             </div>
 
             {/* Tags */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tags (Optional)
-              </label>
-              <div className="flex gap-2 mb-2">
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Tags (Optional)</label>
+              <div className={styles.tagInput}>
                 <input
                   type="text"
                   value={tagInput}
@@ -273,35 +267,31 @@ export default function AddWisdomPage() {
                       handleAddTag(e);
                     }
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                  className={`${styles.input} ${styles.tagInputField}`}
                   placeholder="Add a tag and press Enter"
                   disabled={loading || success}
-                  style={{ color: 'black' }}
                 />
                 <button
                   type="button"
                   onClick={handleAddTag}
-                  className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                  className={styles.addButton}
                   disabled={loading || success}
                 >
                   Add
                 </button>
               </div>
               {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className={styles.tagList}>
                   {formData.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center space-x-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
-                    >
+                    <span key={index} className={styles.tag}>
                       <span>#{tag}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-green-900"
+                        className={styles.tagRemove}
                         disabled={loading || success}
                       >
-                        <X className="w-4 h-4" />
+                        <X size={16} />
                       </button>
                     </span>
                   ))}
@@ -309,9 +299,9 @@ export default function AddWisdomPage() {
               )}
             </div>
 
-            {/* Audio URL (Optional) */}
-            <div>
-              <label htmlFor="audioUrl" className="block text-sm font-medium text-gray-700 mb-2">
+            {/* Audio URL */}
+            <div className={styles.formGroup}>
+              <label htmlFor="audioUrl" className={styles.label}>
                 Audio URL (Optional)
               </label>
               <input
@@ -320,16 +310,16 @@ export default function AddWisdomPage() {
                 type="url"
                 value={formData.audioUrl}
                 onChange={handleChange}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                className={styles.input}
                 placeholder="https://example.com/audio.mp3"
                 disabled={loading || success}
-                style={{ color: 'black' }}
               />
+              <p className={styles.helpText}>Link to an audio recording of the wisdom</p>
             </div>
 
-            {/* Image URL (Optional) */}
-            <div>
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+            {/* Image URL */}
+            <div className={styles.formGroup}>
+              <label htmlFor="imageUrl" className={styles.label}>
                 Image URL (Optional)
               </label>
               <input
@@ -338,40 +328,35 @@ export default function AddWisdomPage() {
                 type="url"
                 value={formData.imageUrl}
                 onChange={handleChange}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                className={styles.input}
                 placeholder="https://example.com/image.jpg"
                 disabled={loading || success}
-                style={{ color: 'black' }}
               />
+              <p className={styles.helpText}>Link to a relevant image</p>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex gap-4">
+            {/* Buttons */}
+            <div className={styles.buttonGroup}>
               <button
                 type="submit"
                 disabled={loading || success}
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+                className={styles.submitButton}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
                     <span>Publishing...</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-5 h-5" />
+                    <Plus size={20} />
                     <span>Publish Wisdom</span>
                   </>
                 )}
               </button>
-              <button
-                type="button"
-                onClick={() => router.push('/wisdom')}
-                disabled={loading}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
-              >
+              <Link href="/wisdom" className={styles.cancelButton}>
                 Cancel
-              </button>
+              </Link>
             </div>
           </form>
         </div>
