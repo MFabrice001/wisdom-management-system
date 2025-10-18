@@ -5,14 +5,20 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
   try {
+    const { id } = await params;
+
     const poll = await prisma.poll.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
-        creator: {
-          select: { id: true, name: true }
+        options: {
+          include: {
+            _count: {
+              select: { votes: true }
+            }
+          }
         },
         _count: {
-          select: { votes: true }
+          select: { options: true }
         }
       }
     });
@@ -25,16 +31,18 @@ export async function GET(request, { params }) {
     const session = await getServerSession(authOptions);
     
     if (session) {
-      const userVote = await prisma.vote.findUnique({
+      const userVote = await prisma.pollVote.findFirst({
         where: {
-          pollId_userId: {
-            pollId: params.id,
-            userId: session.user.id
+          userId: session.user.id,
+          pollOptionId: {
+            in: poll.options.map(opt => opt.id)
           }
         }
       });
 
-      poll.userVote = userVote?.option || null;
+      poll.userVote = userVote?.pollOptionId || null;
+    } else {
+      poll.userVote = null;
     }
 
     return NextResponse.json(poll);
@@ -54,15 +62,16 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
-    const { question, isActive, endDate } = body;
+    const { question, endDate, isActive } = body;
 
     const updatedPoll = await prisma.poll.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(question && { question }),
-        ...(typeof isActive === 'boolean' && { isActive }),
-        ...(endDate && { endDate: new Date(endDate) })
+        ...(endDate && { endDate: new Date(endDate) }),
+        ...(typeof isActive === 'boolean' && { isActive })
       }
     });
 
@@ -83,8 +92,10 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     await prisma.poll.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Poll deleted successfully' });
