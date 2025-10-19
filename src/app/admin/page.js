@@ -14,7 +14,10 @@ import {
   Calendar,
   Eye,
   ArrowUpRight,
-  Loader2
+  Loader2,
+  Settings,
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -23,6 +26,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -36,7 +40,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      setLoading(true);
+      setRefreshing(true);
       const response = await fetch('/api/admin/stats');
       if (response.ok) {
         const data = await response.json();
@@ -46,7 +50,12 @@ export default function AdminDashboard() {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    await fetchStats();
   };
 
   if (loading || status === 'loading') {
@@ -66,10 +75,16 @@ export default function AdminDashboard() {
             <h1 className={styles.title}>Admin Dashboard</h1>
             <p className={styles.subtitle}>Manage users, wisdom, and system settings</p>
           </div>
-          <Link href="/wisdom" className={styles.backButton}>
-            <ArrowUpRight size={18} />
-            Back to Wisdom
-          </Link>
+          <div className={styles.headerActions}>
+            <button onClick={handleRefresh} className={styles.refreshButton} disabled={refreshing}>
+              <RefreshCw size={18} className={refreshing ? styles.spinning : ''} />
+              Refresh
+            </button>
+            <Link href="/wisdom" className={styles.backButton}>
+              <ArrowUpRight size={18} />
+              Back to Wisdom
+            </Link>
+          </div>
         </div>
 
         {/* Stats Overview */}
@@ -93,14 +108,14 @@ export default function AdminDashboard() {
             label="Total Comments"
             value={stats?.overview?.totalComments || 0}
             color="linear-gradient(135deg, #a855f7, #9333ea)"
-            link="/admin"
+            link="/admin/comments"
           />
           <StatCard
             icon={Heart}
             label="Total Likes"
             value={stats?.overview?.totalLikes || 0}
             color="linear-gradient(135deg, #ef4444, #dc2626)"
-            link="/admin"
+            link="/admin/likes"
           />
         </div>
 
@@ -135,33 +150,38 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
-            <Award size={24} />
+            <Settings size={24} />
             Quick Actions
           </h2>
           <div className={styles.actionsGrid}>
             <ActionCard
+              icon={Award}
               title="Manage Polls"
               description="Create and manage community polls"
               link="/admin/polls"
               color="#6366f1"
             />
             <ActionCard
+              icon={Users}
               title="Manage Users"
               description="View and manage user accounts"
               link="/admin/users"
               color="#3b82f6"
             />
             <ActionCard
+              icon={BookOpen}
               title="Manage Wisdom"
               description="Review and moderate wisdom entries"
               link="/admin/wisdoms"
               color="#22c55e"
             />
             <ActionCard
+              icon={RefreshCw}
               title="Refresh Data"
               description="Update dashboard statistics"
-              onClick={fetchStats}
+              onClick={handleRefresh}
               color="#a855f7"
+              isRefreshing={refreshing}
             />
           </div>
         </div>
@@ -170,7 +190,7 @@ export default function AdminDashboard() {
         {stats?.popularWisdoms && stats.popularWisdoms.length > 0 && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>
-              <Award size={24} />
+              <BarChart3 size={24} />
               Most Popular Wisdom
             </h2>
             <div className={styles.wisdomList}>
@@ -241,11 +261,11 @@ function ActivityCard({ icon: Icon, label, value, color }) {
 }
 
 // Action Card Component
-function ActionCard({ title, description, link, onClick, color }) {
+function ActionCard({ icon: Icon, title, description, link, onClick, color, isRefreshing }) {
   const content = (
     <>
       <div className={styles.actionIcon} style={{ background: color }}>
-        <Award size={24} color="white" />
+        <Icon size={24} color="white" className={isRefreshing ? styles.spinning : ''} />
       </div>
       <h3 className={styles.actionTitle}>{title}</h3>
       <p className={styles.actionDescription}>{description}</p>
@@ -261,7 +281,7 @@ function ActionCard({ title, description, link, onClick, color }) {
   }
 
   return (
-    <button onClick={onClick} className={styles.actionCard}>
+    <button onClick={onClick} className={styles.actionCard} disabled={isRefreshing}>
       {content}
     </button>
   );
