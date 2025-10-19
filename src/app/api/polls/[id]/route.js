@@ -10,16 +10,7 @@ export async function GET(request, { params }) {
     const poll = await prisma.poll.findUnique({
       where: { id },
       include: {
-        options: {
-          include: {
-            _count: {
-              select: { votes: true }
-            }
-          }
-        },
-        _count: {
-          select: { options: true }
-        }
+        votes: true
       }
     });
 
@@ -27,59 +18,40 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
     }
 
-    // Add user's vote if authenticated
-    const session = await getServerSession(authOptions);
+    // Parse options and add vote counts
+    const options = JSON.parse(JSON.stringify(poll.options));
     
-    if (session) {
-      const userVote = await prisma.pollVote.findFirst({
-        where: {
-          userId: session.user.id,
-          pollOptionId: {
-            in: poll.options.map(opt => opt.id)
-          }
-        }
-      });
+    const optionsWithVotes = options.map((option, index) => {
+      const voteCount = poll.votes.filter(vote => vote.option === option.text).length;
+      return {
+        id: `${poll.id}-${index}`,
+        text: option.text,
+        _count: { votes: voteCount }
+      };
+    });
 
-      poll.userVote = userVote?.pollOptionId || null;
-    } else {
-      poll.userVote = null;
+    // Check if user voted
+    const session = await getServerSession(authOptions);
+    let userVote = null;
+    if (session) {
+      const vote = poll.votes.find(v => v.userId === session.user.id);
+      if (vote) {
+        const optionIndex = options.findIndex(opt => opt.text === vote.option);
+        if (optionIndex !== -1) {
+          userVote = `${poll.id}-${optionIndex}`;
+        }
+      }
     }
 
-    return NextResponse.json(poll);
+    return NextResponse.json({
+      ...poll,
+      options: optionsWithVotes,
+      userVote
+    });
 
   } catch (error) {
     console.error('Poll fetch error:', error);
     return NextResponse.json({ error: 'Failed to fetch poll' }, { status: 500 });
-  }
-}
-
-// Update poll (Admin only)
-export async function PATCH(request, { params }) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
-    const body = await request.json();
-    const { question, endDate, isActive } = body;
-
-    const updatedPoll = await prisma.poll.update({
-      where: { id },
-      data: {
-        ...(question && { question }),
-        ...(endDate && { endDate: new Date(endDate) }),
-        ...(typeof isActive === 'boolean' && { isActive })
-      }
-    });
-
-    return NextResponse.json(updatedPoll);
-
-  } catch (error) {
-    console.error('Poll update error:', error);
-    return NextResponse.json({ error: 'Failed to update poll' }, { status: 500 });
   }
 }
 

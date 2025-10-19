@@ -13,51 +13,51 @@ export async function GET(request) {
     const now = new Date();
     
     const where = status === 'active' 
-      ? { endDate: { gte: now } }
+      ? { endDate: { gte: now }, isActive: true }
       : { endDate: { lt: now } };
 
     const polls = await prisma.poll.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        options: {
-          include: {
-            _count: {
-              select: { votes: true }
-            }
-          }
-        }
+        votes: true
       }
     });
 
-    // If user is logged in, get their votes
-    let pollsWithUserVotes = polls;
-    if (session) {
-      pollsWithUserVotes = await Promise.all(
-        polls.map(async (poll) => {
-          const userVote = await prisma.pollVote.findFirst({
-            where: {
-              userId: session.user.id,
-              pollOptionId: {
-                in: poll.options.map(opt => opt.id)
-              }
-            }
-          });
-          
-          return {
-            ...poll,
-            userVote: userVote?.pollOptionId || null
-          };
-        })
-      );
-    } else {
-      pollsWithUserVotes = polls.map(poll => ({
-        ...poll,
-        userVote: null
-      }));
-    }
+    // Parse options and add vote counts
+    const pollsWithCounts = polls.map(poll => {
+      const options = JSON.parse(JSON.stringify(poll.options));
+      
+      // Count votes for each option
+      const optionsWithVotes = options.map((option, index) => {
+        const voteCount = poll.votes.filter(vote => vote.option === option.text).length;
+        return {
+          id: `${poll.id}-${index}`,
+          text: option.text,
+          _count: { votes: voteCount }
+        };
+      });
 
-    return NextResponse.json({ polls: pollsWithUserVotes });
+      // Check if user voted
+      let userVote = null;
+      if (session) {
+        const vote = poll.votes.find(v => v.userId === session.user.id);
+        if (vote) {
+          const optionIndex = options.findIndex(opt => opt.text === vote.option);
+          if (optionIndex !== -1) {
+            userVote = `${poll.id}-${optionIndex}`;
+          }
+        }
+      }
+
+      return {
+        ...poll,
+        options: optionsWithVotes,
+        userVote
+      };
+    });
+
+    return NextResponse.json({ polls: pollsWithCounts });
   } catch (error) {
     console.error('Error fetching polls:', error);
     return NextResponse.json(
@@ -79,6 +79,9 @@ export async function POST(request) {
     const body = await request.json();
     const { question, options, endDate } = body;
 
+    console.log('Creating poll:', { question, options, endDate });
+
+    // Validation
     if (!question || !options || options.length < 2) {
       return NextResponse.json(
         { error: 'Question and at least 2 options are required' },
@@ -86,27 +89,42 @@ export async function POST(request) {
       );
     }
 
+    if (!endDate) {
+      return NextResponse.json(
+        { error: 'End date is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if end date is in the future
+    if (new Date(endDate) <= new Date()) {
+      return NextResponse.json(
+        { error: 'End date must be in the future' },
+        { status: 400 }
+      );
+    }
+
+    // Format options for JSON storage
+    const formattedOptions = options.map(text => ({ text, votes: 0 }));
+
     const poll = await prisma.poll.create({
       data: {
         question,
+        options: formattedOptions, // Store as JSON
         endDate: new Date(endDate),
-        creatorId: session.user.id,
-        isActive: true,
-        options: {
-          create: options.map((text) => ({ text }))
-        }
-      },
-      include: {
-        options: true
+        createdBy: session.user.id,
+        isActive: true
       }
     });
+
+    console.log('Poll created successfully:', poll);
 
     return NextResponse.json(poll, { status: 201 });
 
   } catch (error) {
     console.error('Error creating poll:', error);
     return NextResponse.json(
-      { error: 'Failed to create poll' },
+      { error: error.message || 'Failed to create poll' },
       { status: 500 }
     );
   }

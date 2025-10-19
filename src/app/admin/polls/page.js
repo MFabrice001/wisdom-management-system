@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Edit, Calendar, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit, Calendar, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import styles from './page.module.css';
 
 export default function AdminPollsPage() {
@@ -65,7 +66,14 @@ export default function AdminPollsPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        {/* Header */}
+        {/* Header with Back Button */}
+        <div className={styles.headerTop}>
+          <Link href="/admin" className={styles.backButton}>
+            <ArrowLeft size={20} />
+            Back to Dashboard
+          </Link>
+        </div>
+
         <div className={styles.header}>
           <div>
             <h1 className={styles.title}>Manage Polls</h1>
@@ -170,7 +178,7 @@ function PollCard({ poll, onDelete }) {
   );
 }
 
-// Create Poll Modal Component
+// Create Poll Modal Component - Keep the same as before
 function CreatePollModal({ onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

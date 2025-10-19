@@ -15,12 +15,10 @@ export async function POST(request, { params }) {
     const body = await request.json();
     const { optionId } = body;
 
-    // Check if poll exists and is active
+    // Get poll
     const poll = await prisma.poll.findUnique({
       where: { id },
-      include: {
-        options: true
-      }
+      include: { votes: true }
     });
 
     if (!poll) {
@@ -32,34 +30,33 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Poll has ended' }, { status: 400 });
     }
 
-    // Check if option belongs to this poll
-    const option = poll.options.find(opt => opt.id === optionId);
-    if (!option) {
+    // Parse options
+    const options = JSON.parse(JSON.stringify(poll.options));
+    
+    // Extract option text from optionId (format: "pollId-index")
+    const optionIndex = parseInt(optionId.split('-')[1]);
+    const selectedOption = options[optionIndex];
+
+    if (!selectedOption) {
       return NextResponse.json({ error: 'Invalid option' }, { status: 400 });
     }
 
     // Check if user has already voted
-    const existingVote = await prisma.pollVote.findFirst({
-      where: {
-        userId: session.user.id,
-        pollOptionId: {
-          in: poll.options.map(opt => opt.id)
-        }
-      }
-    });
+    const existingVote = poll.votes.find(v => v.userId === session.user.id);
 
     if (existingVote) {
       // Update existing vote
-      await prisma.pollVote.update({
+      await prisma.vote.update({
         where: { id: existingVote.id },
-        data: { pollOptionId: optionId }
+        data: { option: selectedOption.text }
       });
     } else {
       // Create new vote
-      await prisma.pollVote.create({
+      await prisma.vote.create({
         data: {
+          pollId: id,
           userId: session.user.id,
-          pollOptionId: optionId
+          option: selectedOption.text
         }
       });
     }
