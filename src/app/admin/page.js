@@ -5,370 +5,306 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  Users, BookOpen, TrendingUp, Award, Calendar,
-  Loader2, BarChart3, Shield, Settings, Edit, Trash2, Eye, MessageSquare
+  Users, 
+  BookOpen, 
+  MessageCircle, 
+  Heart, 
+  TrendingUp, 
+  Award,
+  Calendar,
+  Eye,
+  ArrowUpRight,
+  Loader2
 } from 'lucide-react';
-import PollManagement from '@/components/admin/PollManagement';
+import styles from './page.module.css';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [wisdoms, setWisdoms] = useState([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
-      router.push('/wisdom');
-    } else if (status === 'authenticated') {
-      fetchAdminData();
+    } else if (session?.user?.role !== 'ADMIN') {
+      router.push('/');
+    } else {
+      fetchStats();
     }
   }, [status, session, router]);
 
-  const fetchAdminData = async () => {
+  const fetchStats = async () => {
     try {
       setLoading(true);
-      const [statsRes, usersRes, wisdomsRes] = await Promise.all([
-        fetch('/api/admin/stats'),
-        fetch('/api/admin/users'),
-        fetch('/api/admin/wisdoms')
-      ]);
-
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (usersRes.ok) {
-        const data = await usersRes.json();
-        setUsers(data.users || data);
-      }
-      if (wisdomsRes.ok) {
-        const data = await wisdomsRes.json();
-        setWisdoms(data.wisdoms || data);
+      const response = await fetch('/api/admin/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
       }
     } catch (error) {
-      console.error('Error fetching admin data:', error);
+      console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-      });
-      
-      if (response.ok) {
-        setUsers(users.filter(u => u.id !== userId));
-        alert('User deleted successfully');
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-    }
-  };
-
-  const handleDeleteWisdom = async (wisdomId) => {
-    if (!confirm('Are you sure you want to delete this wisdom?')) return;
-    
-    try {
-      const response = await fetch(`/api/admin/wisdoms/${wisdomId}`, {
-        method: 'DELETE',
-      });
-      
-      if (response.ok) {
-        setWisdoms(wisdoms.filter(w => w.id !== wisdomId));
-        alert('Wisdom deleted successfully');
-      }
-    } catch (error) {
-      console.error('Error deleting wisdom:', error);
-    }
-  };
-
   if (loading || status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      <div className={styles.loading}>
+        <Loader2 className={styles.spinner} size={48} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className={styles.page}>
+      <div className={styles.container}>
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-                <Shield className="w-10 h-10 text-blue-600" />
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-600 mt-2">Manage users, wisdom, and system settings</p>
-            </div>
-            <Link
-              href="/wisdom"
-              className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-            >
-              Back to Wisdom
-            </Link>
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.title}>Admin Dashboard</h1>
+            <p className={styles.subtitle}>Manage users, wisdom, and system settings</p>
+          </div>
+          <Link href="/wisdom" className={styles.backButton}>
+            <ArrowUpRight size={18} />
+            Back to Wisdom
+          </Link>
+        </div>
+
+        {/* Stats Overview */}
+        <div className={styles.statsGrid}>
+          <StatCard
+            icon={Users}
+            label="Total Users"
+            value={stats?.overview?.totalUsers || 0}
+            color="linear-gradient(135deg, #3b82f6, #2563eb)"
+            link="/admin/users"
+          />
+          <StatCard
+            icon={BookOpen}
+            label="Total Wisdom"
+            value={stats?.overview?.totalWisdoms || 0}
+            color="linear-gradient(135deg, #22c55e, #16a34a)"
+            link="/admin/wisdoms"
+          />
+          <StatCard
+            icon={MessageCircle}
+            label="Total Comments"
+            value={stats?.overview?.totalComments || 0}
+            color="linear-gradient(135deg, #a855f7, #9333ea)"
+            link="/admin"
+          />
+          <StatCard
+            icon={Heart}
+            label="Total Likes"
+            value={stats?.overview?.totalLikes || 0}
+            color="linear-gradient(135deg, #ef4444, #dc2626)"
+            link="/admin"
+          />
+        </div>
+
+        {/* Recent Activity */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            <TrendingUp size={24} />
+            Recent Activity (Last 30 Days)
+          </h2>
+          <div className={styles.activityGrid}>
+            <ActivityCard
+              icon={Users}
+              label="New Users"
+              value={stats?.recentActivity?.newUsers || 0}
+              color="#3b82f6"
+            />
+            <ActivityCard
+              icon={BookOpen}
+              label="New Wisdom"
+              value={stats?.recentActivity?.newWisdoms || 0}
+              color="#22c55e"
+            />
+            <ActivityCard
+              icon={Eye}
+              label="Active Users"
+              value={stats?.recentActivity?.activeUsers || 0}
+              color="#a855f7"
+            />
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Users</p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {stats?.overview?.totalUsers || stats?.totalUsers || 0}
-                </p>
-              </div>
-              <Users className="w-12 h-12 text-blue-500 opacity-20" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Wisdom</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {stats?.overview?.totalWisdoms || stats?.totalWisdoms || 0}
-                </p>
-              </div>
-              <BookOpen className="w-12 h-12 text-green-500 opacity-20" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Comments</p>
-                <p className="text-3xl font-bold text-purple-600">
-                  {stats?.overview?.totalComments || stats?.totalComments || 0}
-                </p>
-              </div>
-              <TrendingUp className="w-12 h-12 text-purple-500 opacity-20" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Likes</p>
-                <p className="text-3xl font-bold text-orange-600">
-                  {stats?.overview?.totalLikes || stats?.totalLikes || 0}
-                </p>
-              </div>
-              <Eye className="w-12 h-12 text-orange-500 opacity-20" />
-            </div>
+        {/* Quick Actions */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            <Award size={24} />
+            Quick Actions
+          </h2>
+          <div className={styles.actionsGrid}>
+            <ActionCard
+              title="Manage Polls"
+              description="Create and manage community polls"
+              link="/admin/polls"
+              color="#6366f1"
+            />
+            <ActionCard
+              title="Manage Users"
+              description="View and manage user accounts"
+              link="/admin/users"
+              color="#3b82f6"
+            />
+            <ActionCard
+              title="Manage Wisdom"
+              description="Review and moderate wisdom entries"
+              link="/admin/wisdoms"
+              color="#22c55e"
+            />
+            <ActionCard
+              title="Refresh Data"
+              description="Update dashboard statistics"
+              onClick={fetchStats}
+              color="#a855f7"
+            />
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="border-b border-gray-200">
-            <div className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                  activeTab === 'overview'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <BarChart3 className="w-5 h-5 inline mr-2" />
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                  activeTab === 'users'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Users className="w-5 h-5 inline mr-2" />
-                Users ({users.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('wisdom')}
-                className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                  activeTab === 'wisdom'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <BookOpen className="w-5 h-5 inline mr-2" />
-                Wisdom ({wisdoms.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('polls')}
-                className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                  activeTab === 'polls'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <MessageSquare className="w-5 h-5 inline mr-2" />
-                Polls
-              </button>
+        {/* Popular Wisdom */}
+        {stats?.popularWisdoms && stats.popularWisdoms.length > 0 && (
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <Award size={24} />
+              Most Popular Wisdom
+            </h2>
+            <div className={styles.wisdomList}>
+              {stats.popularWisdoms.map((wisdom, index) => (
+                <WisdomCard key={wisdom.id} wisdom={wisdom} rank={index + 1} />
+              ))}
             </div>
           </div>
+        )}
 
-          <div className="p-6">
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">System Overview</h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="border border-gray-200 rounded-lg p-6">
-                    <h4 className="font-semibold text-gray-900 mb-4">Recent Activity</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">New Users (Last 30 days)</span>
-                        <span className="font-semibold">
-                          {stats?.recentActivity?.newUsers || stats?.newUsersWeek || 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">New Wisdom (Last 30 days)</span>
-                        <span className="font-semibold">
-                          {stats?.recentActivity?.newWisdoms || stats?.newWisdomsWeek || 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Active Users</span>
-                        <span className="font-semibold">
-                          {stats?.recentActivity?.activeUsers || stats?.activeToday || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-gray-200 rounded-lg p-6">
-                    <h4 className="font-semibold text-gray-900 mb-4">Quick Actions</h4>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => setActiveTab('polls')}
-                        className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-left"
-                      >
-                        Manage Polls
-                      </button>
-                      <button
-                        onClick={fetchAdminData}
-                        className="w-full px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
-                      >
-                        Refresh Data
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Users Tab */}
-            {activeTab === 'users' && (
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">User Management</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Name</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Email</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Role</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Joined</th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4 text-sm">{user.name}</td>
-                          <td className="py-3 px-4 text-sm">{user.email}</td>
-                          <td className="py-3 px-4 text-sm">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              user.role === 'ADMIN' ? 'bg-blue-100 text-blue-800' :
-                              user.role === 'ELDER' ? 'bg-purple-100 text-purple-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {new Date(user.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="py-3 px-4 text-right space-x-2">
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              disabled={user.role === 'ADMIN'}
-                              className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={user.role === 'ADMIN' ? 'Cannot delete admin' : 'Delete user'}
-                            >
-                              <Trash2 className="w-4 h-4 inline" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Wisdom Tab */}
-            {activeTab === 'wisdom' && (
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Wisdom Management</h3>
-                <div className="space-y-4">
-                  {wisdoms.map((wisdom) => (
-                    <div key={wisdom.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">{wisdom.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{wisdom.content}</p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                            <span>By: {wisdom.author?.name}</span>
-                            <span>Category: {wisdom.category}</span>
-                            <span>Views: {wisdom.views}</span>
-                            <span>Likes: {wisdom._count?.likes || 0}</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/wisdom/${wisdom.id}`}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteWisdom(wisdom.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Polls Tab */}
-            {activeTab === 'polls' && (
-              <div>
-                <PollManagement />
-              </div>
-            )}
+        {/* Category Stats */}
+        {stats?.categoryStats && stats.categoryStats.length > 0 && (
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <Calendar size={24} />
+              Category Distribution
+            </h2>
+            <div className={styles.categoryGrid}>
+              {stats.categoryStats.map((cat) => (
+                <CategoryCard key={cat.category} category={cat.category} count={cat._count.category} />
+              ))}
+            </div>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({ icon: Icon, label, value, color, link }) {
+  const content = (
+    <>
+      <div className={styles.statIcon} style={{ background: color }}>
+        <Icon size={28} color="white" />
+      </div>
+      <div className={styles.statInfo}>
+        <p className={styles.statValue}>{value}</p>
+        <p className={styles.statLabel}>{label}</p>
+      </div>
+    </>
+  );
+
+  if (link) {
+    return (
+      <Link href={link} className={styles.statCard}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={styles.statCard}>{content}</div>;
+}
+
+// Activity Card Component
+function ActivityCard({ icon: Icon, label, value, color }) {
+  return (
+    <div className={styles.activityCard}>
+      <div className={styles.activityIcon} style={{ color }}>
+        <Icon size={24} />
+      </div>
+      <div>
+        <p className={styles.activityValue}>{value}</p>
+        <p className={styles.activityLabel}>{label}</p>
+      </div>
+    </div>
+  );
+}
+
+// Action Card Component
+function ActionCard({ title, description, link, onClick, color }) {
+  const content = (
+    <>
+      <div className={styles.actionIcon} style={{ background: color }}>
+        <Award size={24} color="white" />
+      </div>
+      <h3 className={styles.actionTitle}>{title}</h3>
+      <p className={styles.actionDescription}>{description}</p>
+    </>
+  );
+
+  if (link) {
+    return (
+      <Link href={link} className={styles.actionCard}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className={styles.actionCard}>
+      {content}
+    </button>
+  );
+}
+
+// Wisdom Card Component
+function WisdomCard({ wisdom, rank }) {
+  return (
+    <Link href={`/wisdom/${wisdom.id}`} className={styles.wisdomCard}>
+      <div className={styles.wisdomRank}>#{rank}</div>
+      <div className={styles.wisdomContent}>
+        <h4 className={styles.wisdomTitle}>{wisdom.title}</h4>
+        <div className={styles.wisdomStats}>
+          <span>
+            <Eye size={14} />
+            {wisdom.views} views
+          </span>
+          <span>
+            <Heart size={14} />
+            {wisdom._count?.likes || 0} likes
+          </span>
+          <span>
+            <MessageCircle size={14} />
+            {wisdom._count?.comments || 0} comments
+          </span>
         </div>
       </div>
+    </Link>
+  );
+}
+
+// Category Card Component
+function CategoryCard({ category, count }) {
+  const formatCategory = (cat) => {
+    return cat.split('_').map(word => 
+      word.charAt(0) + word.slice(1).toLowerCase()
+    ).join(' ');
+  };
+
+  return (
+    <div className={styles.categoryCard}>
+      <p className={styles.categoryName}>{formatCategory(category)}</p>
+      <p className={styles.categoryCount}>{count}</p>
     </div>
   );
 }

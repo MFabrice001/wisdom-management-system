@@ -4,73 +4,53 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  User, Mail, Calendar, Edit2, Save, X, Loader2, 
-  BookOpen, Heart, MessageCircle, Award 
-} from 'lucide-react';
+import { User, Edit, BookOpen, Heart, MessageCircle, Award, Mail, Calendar, Loader2 } from 'lucide-react';
+import styles from './page.module.css';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [userStats, setUserStats] = useState(null);
-  const [userWisdoms, setUserWisdoms] = useState([]);
-  const [profileData, setProfileData] = useState({
-    name: '',
-    bio: '',
-  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
-    } else if (status === 'authenticated') {
-      fetchUserData();
+    } else if (session) {
+      fetchProfile();
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
-  const fetchUserData = async () => {
+  const fetchProfile = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/user/profile');
       if (response.ok) {
         const data = await response.json();
-        setProfileData({
-          name: data.user.name,
-          bio: data.user.bio || '',
-        });
-        setUserStats(data.stats);
-        setUserWisdoms(data.wisdoms);
+        setProfile(data);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      const response = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData),
-      });
+  if (loading || status === 'loading') {
+    return (
+      <div className={styles.loading}>
+        <Loader2 className={styles.spinner} size={48} />
+      </div>
+    );
+  }
 
-      if (response.ok) {
-        setIsEditing(false);
-        // Optionally refresh session
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (!profile) {
+    return (
+      <div className={styles.error}>
+        <p>Failed to load profile</p>
+      </div>
+    );
+  }
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -80,225 +60,166 @@ export default function ProfilePage() {
     });
   };
 
-  const formatCategory = (category) => {
-    return category.split('_').map(word => 
-      word.charAt(0) + word.slice(1).toLowerCase()
-    ).join(' ');
-  };
-
-  if (status === 'loading' || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-green-600" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Profile Header */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-green-500 to-blue-500 h-32"></div>
-          <div className="px-8 pb-8">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16">
-              <div className="flex items-end space-x-4">
-                <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                  <span className="text-white font-bold text-4xl">
-                    {session?.user.name?.charAt(0).toUpperCase()}
+    <div className={styles.page}>
+      <div className={styles.container}>
+        {/* Header */}
+        <div className={styles.header}>
+          <h1 className={styles.title}>My Profile</h1>
+          <Link href="/profile/edit" className={styles.editButton}>
+            <Edit size={18} />
+            Edit Profile
+          </Link>
+        </div>
+
+        {/* Profile Card */}
+        <div className={styles.profileCard}>
+          <div className={styles.profileHeader}>
+            <div className={styles.avatar}>
+              {profile.name?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className={styles.profileInfo}>
+              <h2 className={styles.name}>{profile.name}</h2>
+              <p className={styles.email}>
+                <Mail size={16} />
+                {profile.email}
+              </p>
+              <div className={styles.badges}>
+                {profile.role === 'ADMIN' && (
+                  <span className={styles.adminBadge}>
+                    <Award size={14} />
+                    Admin
                   </span>
-                </div>
-                <div className="mb-4">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={profileData.name}
-                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                      className="text-3xl font-bold text-gray-900 border-b-2 border-green-500 focus:outline-none bg-white text-black"
-                      style={{ color: 'black' }}
-                    />
-                  ) : (
-                    <h1 className="text-3xl font-bold text-gray-900">{profileData.name}</h1>
-                  )}
-                  <div className="flex items-center space-x-4 mt-2 text-gray-600">
-                    <div className="flex items-center space-x-1">
-                      <Mail className="w-4 h-4" />
-                      <span className="text-sm">{session?.user.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-sm">Joined {formatDate(session?.user.createdAt || new Date())}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4 md:mt-0 mb-4">
-                {isEditing ? (
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
-                    >
-                      {saving ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Save className="w-5 h-5" />
-                      )}
-                      <span>Save</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsEditing(false);
-                        setProfileData({
-                          name: session?.user.name || '',
-                          bio: userStats?.bio || '',
-                        });
-                      }}
-                      className="flex items-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                      <span>Cancel</span>
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                    <span>Edit Profile</span>
-                  </button>
                 )}
+                {profile.role === 'ELDER' && (
+                  <span className={styles.elderBadge}>
+                    <Award size={14} />
+                    Elder
+                  </span>
+                )}
+                <span className={styles.dateBadge}>
+                  <Calendar size={14} />
+                  Joined {formatDate(profile.createdAt)}
+                </span>
               </div>
-            </div>
-
-            {/* Bio */}
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Bio</h3>
-              {isEditing ? (
-                <textarea
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                  rows="3"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
-                  placeholder="Tell us about yourself..."
-                  style={{ color: 'black' }}
-                />
-              ) : (
-                <p className="text-gray-600">
-                  {profileData.bio || 'No bio added yet. Click Edit Profile to add one.'}
-                </p>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Wisdom Shared</p>
-                <p className="text-3xl font-bold text-green-600">{userStats?.wisdomCount || 0}</p>
+        {/* Statistics */}
+        <div className={styles.statsSection}>
+          <h3 className={styles.sectionTitle}>Statistics</h3>
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <div className={styles.statIcon} style={{background: 'linear-gradient(135deg, #22c55e, #16a34a)'}}>
+                <BookOpen size={24} />
               </div>
-              <BookOpen className="w-12 h-12 text-green-500 opacity-20" />
+              <div className={styles.statInfo}>
+                <p className={styles.statNumber}>{profile._count?.wisdoms || 0}</p>
+                <p className={styles.statLabel}>Wisdom Shared</p>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Likes</p>
-                <p className="text-3xl font-bold text-red-600">{userStats?.totalLikes || 0}</p>
+            <div className={styles.statCard}>
+              <div className={styles.statIcon} style={{background: 'linear-gradient(135deg, #ef4444, #dc2626)'}}>
+                <Heart size={24} />
               </div>
-              <Heart className="w-12 h-12 text-red-500 opacity-20" />
+              <div className={styles.statInfo}>
+                <p className={styles.statNumber}>{profile._count?.likes || 0}</p>
+                <p className={styles.statLabel}>Likes Given</p>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Comments Made</p>
-                <p className="text-3xl font-bold text-blue-600">{userStats?.commentCount || 0}</p>
+            <div className={styles.statCard}>
+              <div className={styles.statIcon} style={{background: 'linear-gradient(135deg, #3b82f6, #2563eb)'}}>
+                <MessageCircle size={24} />
               </div>
-              <MessageCircle className="w-12 h-12 text-blue-500 opacity-20" />
+              <div className={styles.statInfo}>
+                <p className={styles.statNumber}>{profile._count?.comments || 0}</p>
+                <p className={styles.statLabel}>Comments</p>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Views</p>
-                <p className="text-3xl font-bold text-purple-600">{userStats?.totalViews || 0}</p>
+            <div className={styles.statCard}>
+              <div className={styles.statIcon} style={{background: 'linear-gradient(135deg, #a855f7, #9333ea)'}}>
+                <Award size={24} />
               </div>
-              <Award className="w-12 h-12 text-purple-500 opacity-20" />
+              <div className={styles.statInfo}>
+                <p className={styles.statNumber}>{profile._count?.bookmarks || 0}</p>
+                <p className={styles.statLabel}>Bookmarks</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* My Wisdom Entries */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">My Wisdom Entries</h2>
-            <Link
-              href="/wisdom/add"
-              className="text-green-600 hover:text-green-700 font-semibold"
-            >
-              Add New +
-            </Link>
-          </div>
-
-          {userWisdoms.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">You haven't shared any wisdom yet</p>
-              <Link
-                href="/wisdom/add"
-                className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-              >
-                <BookOpen className="w-5 h-5" />
-                <span>Share Your First Wisdom</span>
+        {/* Recent Wisdom */}
+        {profile.wisdoms && profile.wisdoms.length > 0 && (
+          <div className={styles.wisdomSection}>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>Recent Wisdom</h3>
+              <Link href="/wisdom" className={styles.viewAllLink}>
+                View All
               </Link>
             </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              {userWisdoms.map((wisdom) => (
-                <Link key={wisdom.id} href={`/wisdom/${wisdom.id}`}>
-                  <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg hover:border-green-500 transition-all cursor-pointer">
-                    <div className="flex items-start justify-between mb-3">
-                      <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                        {formatCategory(wisdom.category)}
-                      </span>
-                      <span className="text-xs text-gray-500 uppercase">
-                        {wisdom.language}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">
-                      {wisdom.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                      {wisdom.content}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-1">
-                          <Heart className="w-4 h-4" />
-                          <span>{wisdom._count?.likes || 0}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <MessageCircle className="w-4 h-4" />
-                          <span>{wisdom._count?.comments || 0}</span>
-                        </div>
-                      </div>
-                      <span className="text-xs">{formatDate(wisdom.createdAt)}</span>
-                    </div>
+            <div className={styles.wisdomGrid}>
+              {profile.wisdoms.slice(0, 3).map((wisdom) => (
+                <Link
+                  key={wisdom.id}
+                  href={`/wisdom/${wisdom.id}`}
+                  className={styles.wisdomCard}
+                >
+                  <div className={styles.wisdomHeader}>
+                    <span className={styles.categoryBadge}>
+                      {wisdom.category.split('_').join(' ')}
+                    </span>
+                    <span className={styles.languageBadge}>
+                      {wisdom.language}
+                    </span>
+                  </div>
+                  <h4 className={styles.wisdomTitle}>{wisdom.title}</h4>
+                  <p className={styles.wisdomContent}>
+                    {wisdom.content.substring(0, 100)}...
+                  </p>
+                  <div className={styles.wisdomFooter}>
+                    <span className={styles.wisdomStat}>
+                      <Heart size={14} />
+                      {wisdom._count?.likes || 0}
+                    </span>
+                    <span className={styles.wisdomStat}>
+                      <MessageCircle size={14} />
+                      {wisdom._count?.comments || 0}
+                    </span>
                   </div>
                 </Link>
               ))}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Account Info */}
+        <div className={styles.infoSection}>
+          <h3 className={styles.sectionTitle}>Account Information</h3>
+          <div className={styles.infoCard}>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>Full Name</span>
+              <span className={styles.infoValue}>{profile.name}</span>
+            </div>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>Email Address</span>
+              <span className={styles.infoValue}>{profile.email}</span>
+            </div>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>Account Type</span>
+              <span className={styles.infoValue}>
+                {profile.role === 'ADMIN' ? 'Administrator' : 
+                 profile.role === 'ELDER' ? 'Elder' : 'Member'}
+              </span>
+            </div>
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>Member Since</span>
+              <span className={styles.infoValue}>{formatDate(profile.createdAt)}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

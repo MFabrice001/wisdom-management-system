@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { BarChart3, Clock, CheckCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { CheckCircle, Loader2 } from 'lucide-react';
+import styles from './PollWidget.module.css';
 
 export default function PollWidget() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPollIndex, setCurrentPollIndex] = useState(0);
+  const [voting, setVoting] = useState(false);
 
   useEffect(() => {
     fetchActivePolls();
@@ -15,9 +20,16 @@ export default function PollWidget() {
 
   const fetchActivePolls = async () => {
     try {
-      const res = await fetch('/api/polls');
+      setLoading(true);
+      const res = await fetch('/api/polls?status=active');
       const data = await res.json();
-      setPolls(data.filter(poll => poll.isActive && new Date(poll.endDate) > new Date()));
+      
+      // Filter active polls that haven't ended
+      const activePolls = (data.polls || []).filter(
+        poll => new Date(poll.endDate) > new Date()
+      );
+      
+      setPolls(activePolls);
     } catch (error) {
       console.error('Failed to fetch polls:', error);
     } finally {
@@ -25,139 +37,134 @@ export default function PollWidget() {
     }
   };
 
-  const handleVote = async (pollId, option) => {
+  const handleVote = async (optionId) => {
     if (!session) {
-      alert('Please sign in to vote');
+      router.push('/login');
       return;
     }
 
+    const currentPoll = polls[currentPollIndex];
+    if (!currentPoll) return;
+
     try {
-      const res = await fetch(`/api/polls/${pollId}/vote`, {
+      setVoting(true);
+      const response = await fetch(`/api/polls/${currentPoll.id}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ option })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ optionId }),
       });
 
-      if (res.ok) {
-        fetchActivePolls(); // Refresh polls to show updated results
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to vote');
+      if (response.ok) {
+        // Refresh polls to show updated results
+        await fetchActivePolls();
       }
     } catch (error) {
-      console.error('Vote error:', error);
-      alert('Failed to record vote');
+      console.error('Error voting:', error);
+    } finally {
+      setVoting(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </div>
+      <div className={styles.loading}>
+        <Loader2 className={styles.spinner} size={32} />
       </div>
     );
   }
 
   if (polls.length === 0) {
-    return null; // Don't show widget if no active polls
+    return (
+      <div className={styles.empty}>
+        <p>No active polls at the moment</p>
+      </div>
+    );
   }
 
-  return (
-    <div className="space-y-6">
-      {polls.map((poll) => {
-        const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
-        const hasVoted = poll.userVote !== null;
-        const daysLeft = Math.ceil((new Date(poll.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+  const currentPoll = polls[currentPollIndex];
+  const totalVotes = currentPoll.options.reduce(
+    (sum, option) => sum + (option._count?.votes || 0),
+    0
+  );
+  const hasVoted = currentPoll.userVote !== null;
 
-        return (
-          <div key={poll.id} className="bg-white rounded-lg shadow-md p-6">
-            {/* Poll Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {poll.question}
-                </h3>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <BarChart3 className="w-4 h-4" />
-                    {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left
-                  </span>
+  return (
+    <div className={styles.pollWidget}>
+      <div className={styles.pollQuestion}>{currentPoll.question}</div>
+
+      <div className={styles.pollOptions}>
+        {currentPoll.options.map((option) => {
+          const votes = option._count?.votes || 0;
+          const percentage = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(1) : 0;
+          const isUserVote = hasVoted && currentPoll.userVote === option.id;
+
+          if (hasVoted) {
+            // Show results
+            return (
+              <div
+                key={option.id}
+                className={`${styles.pollResult} ${isUserVote ? styles.userVoted : ''}`}
+              >
+                <div className={styles.resultText}>
+                  <span>{option.text}</span>
+                  {isUserVote && (
+                    <CheckCircle size={16} className={styles.checkIcon} />
+                  )}
+                </div>
+                <div className={styles.resultBar}>
+                  <div
+                    className={styles.resultFill}
+                    style={{ width: `${percentage}%` }}
+                  />
+                  <span className={styles.percentage}>{percentage}%</span>
                 </div>
               </div>
-              {hasVoted && (
-                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                  <CheckCircle className="w-4 h-4" />
-                  Voted
-                </div>
-              )}
-            </div>
+            );
+          }
 
-            {/* Poll Options */}
-            <div className="space-y-3">
-              {poll.options.map((option, idx) => {
-                const percentage = totalVotes > 0 
-                  ? Math.round((option.votes / totalVotes) * 100) 
-                  : 0;
-                const isUserChoice = hasVoted && poll.userVote === option.text;
+          // Show vote buttons
+          return (
+            <button
+              key={option.id}
+              onClick={() => handleVote(option.id)}
+              disabled={voting || !session}
+              className={styles.pollOption}
+            >
+              {option.text}
+            </button>
+          );
+        })}
+      </div>
 
-                return (
-                  <div key={idx}>
-                    <button
-                      onClick={() => handleVote(poll.id, option.text)}
-                      disabled={hasVoted || !session}
-                      className={`w-full text-left transition-all ${
-                        hasVoted
-                          ? 'cursor-default'
-                          : session
-                          ? 'cursor-pointer hover:bg-gray-50'
-                          : 'cursor-not-allowed opacity-60'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className={`text-sm font-medium ${
-                          isUserChoice ? 'text-blue-600' : 'text-gray-700'
-                        }`}>
-                          {option.text} {isUserChoice && '✓'}
-                        </span>
-                        {hasVoted && (
-                          <span className="text-sm text-gray-600">
-                            {option.votes} ({percentage}%)
-                          </span>
-                        )}
-                      </div>
-                      <div className="relative">
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                          {hasVoted && (
-                            <div
-                              className={`h-2 rounded-full transition-all duration-500 ${
-                                isUserChoice ? 'bg-blue-600' : 'bg-gray-400'
-                              }`}
-                              style={{ width: `${percentage}%` }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+      {!session && !hasVoted && (
+        <p className={styles.loginPrompt}>
+          <button onClick={() => router.push('/login')} className={styles.loginLink}>
+            Sign in to vote
+          </button>
+        </p>
+      )}
 
-            {!session && (
-              <p className="text-sm text-gray-500 mt-4 text-center">
-                Sign in to vote on this poll
-              </p>
-            )}
-          </div>
-        );
-      })}
+      {hasVoted && (
+        <p className={styles.votedMessage}>
+          Total votes: {totalVotes}
+        </p>
+      )}
+
+      {polls.length > 1 && (
+        <div className={styles.pollNavigation}>
+          {polls.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentPollIndex(index)}
+              className={`${styles.navDot} ${
+                index === currentPollIndex ? styles.activeDot : ''
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

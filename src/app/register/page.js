@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
+import styles from './page.module.css';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -83,128 +84,116 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <div className={styles.page}>
+      <div className={styles.container}>
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
-            <UserPlus className="w-8 h-8 text-white" />
+        <div className={styles.header}>
+          <div className={styles.logoWrapper}>
+            <UserPlus size={32} color="white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-          <p className="mt-2 text-gray-600">Join the Umurage Wubwenge community</p>
+          <h2 className={styles.title}>Create Account</h2>
+          <p className={styles.subtitle}>Join the Umurage Wubwenge community</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className={styles.card}>
           {/* Success Message */}
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-green-800 font-semibold">Registration Successful!</p>
-                <p className="text-green-600 text-sm">Redirecting to login...</p>
+            <div className={styles.success}>
+              <CheckCircle className={styles.successIcon} size={20} />
+              <div className={styles.successContent}>
+                <p className={styles.successTitle}>Registration Successful!</p>
+                <p className={styles.successText}>Redirecting to login...</p>
               </div>
             </div>
           )}
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-800">{error}</p>
+            <div className={styles.error}>
+              <AlertCircle className={styles.errorIcon} size={20} />
+              <p className={styles.errorText}>{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className={styles.form}>
             {/* Name Field */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className={styles.formGroup}>
+              <label htmlFor="name" className={styles.label}>
                 Full Name
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
+              <div className={styles.inputWrapper}>
+                <User className={styles.inputIcon} size={20} />
                 <input
                   id="name"
                   name="name"
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                  className={styles.input}
                   placeholder="John Doe"
                   disabled={loading || success}
-                  style={{ color: 'black' }}
                 />
               </div>
             </div>
 
             {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className={styles.formGroup}>
+              <label htmlFor="email" className={styles.label}>
                 Email Address
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
+              <div className={styles.inputWrapper}>
+                <Mail className={styles.inputIcon} size={20} />
                 <input
                   id="email"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                  className={styles.input}
                   placeholder="john@example.com"
                   disabled={loading || success}
-                  style={{ color: 'black' }}
                 />
               </div>
             </div>
 
             {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className={styles.formGroup}>
+              <label htmlFor="password" className={styles.label}>
                 Password
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+              <div className={styles.inputWrapper}>
+                <Lock className={styles.inputIcon} size={20} />
                 <input
                   id="password"
                   name="password"
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                  className={styles.input}
                   placeholder="••••••••"
                   disabled={loading || success}
-                  style={{ color: 'black', WebkitTextFillColor: 'black' }}
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
+              <p className={styles.helpText}>Must be at least 6 characters</p>
             </div>
 
             {/* Confirm Password Field */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className={styles.formGroup}>
+              <label htmlFor="confirmPassword" className={styles.label}>
                 Confirm Password
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+              <div className={styles.inputWrapper}>
+                <Lock className={styles.inputIcon} size={20} />
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-black placeholder-gray-400"
+                  className={styles.input}
                   placeholder="••••••••"
                   disabled={loading || success}
-                  style={{ color: 'black', WebkitTextFillColor: 'black' }}
                 />
               </div>
             </div>
@@ -213,16 +202,16 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading || success}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+              className={styles.submitButton}
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className={styles.spinner}></div>
                   <span>Creating Account...</span>
                 </>
               ) : (
                 <>
-                  <UserPlus className="w-5 h-5" />
+                  <UserPlus size={20} />
                   <span>Create Account</span>
                 </>
               )}
@@ -230,10 +219,10 @@ export default function RegisterPage() {
           </form>
 
           {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
+          <div className={styles.footer}>
+            <p className={styles.footerText}>
               Already have an account?{' '}
-              <Link href="/login" className="text-green-600 hover:text-green-700 font-semibold">
+              <Link href="/login" className={styles.loginLink}>
                 Sign In
               </Link>
             </p>
@@ -241,13 +230,13 @@ export default function RegisterPage() {
         </div>
 
         {/* Terms */}
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className={styles.terms}>
           By creating an account, you agree to our{' '}
-          <Link href="/terms" className="text-green-600 hover:underline">
+          <Link href="/terms" className={styles.termsLink}>
             Terms of Service
           </Link>{' '}
           and{' '}
-          <Link href="/privacy" className="text-green-600 hover:underline">
+          <Link href="/privacy" className={styles.termsLink}>
             Privacy Policy
           </Link>
         </p>

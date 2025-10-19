@@ -1,73 +1,60 @@
-// src/app/api/user/profile/route.js
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
-
-
-// GET - Fetch user profile data
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'You must be logged in' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch user with all related data
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
         name: true,
         email: true,
-        bio: true,
         role: true,
+        profileImage: true,
         createdAt: true,
-      }
-    });
-
-    // Get user's wisdom entries
-    const wisdoms = await prisma.wisdom.findMany({
-      where: { authorId: session.user.id },
-      include: {
         _count: {
           select: {
+            wisdoms: true,
             likes: true,
             comments: true,
+            bookmarks: true
+          }
+        },
+        wisdoms: {
+          take: 3,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            category: true,
+            language: true,
+            createdAt: true,
+            _count: {
+              select: {
+                likes: true,
+                comments: true
+              }
+            }
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
 
-    // Calculate stats
-    const wisdomCount = wisdoms.length;
-    const totalLikes = wisdoms.reduce((sum, w) => sum + w._count.likes, 0);
-    const totalViews = wisdoms.reduce((sum, w) => sum + w.views, 0);
-    
-    const commentCount = await prisma.comment.count({
-      where: { userId: session.user.id }
-    });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
-    const stats = {
-      wisdomCount,
-      totalLikes,
-      totalViews,
-      commentCount,
-    };
-
-    return NextResponse.json(
-      { user, wisdoms, stats },
-      { status: 200 }
-    );
-
+    return NextResponse.json(user);
   } catch (error) {
     console.error('Error fetching profile:', error);
     return NextResponse.json(
@@ -77,41 +64,82 @@ export async function GET(request) {
   }
 }
 
-// PUT - Update user profile
-export async function PUT(request) {
+export async function PATCH(request) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'You must be logged in' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { name, bio } = body;
+    const { name, email, currentPassword, newPassword } = body;
+
+    // Get current user
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if email is being changed and if it's already taken
+    if (email && email !== user.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      });
+
+      if (existingUser) {
+        return NextResponse.json(
+          { error: 'Email already in use' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Prepare update data
+    const updateData = {
+      ...(name && { name }),
+      ...(email && { email })
+    };
+
+    // If changing password
+    if (newPassword) {
+      if (!currentPassword) {
+        return NextResponse.json(
+          { error: 'Current password is required' },
+          { status: 400 }
+        );
+      }
+
+      // Verify current password
+      const isValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'Current password is incorrect' },
+          { status: 400 }
+        );
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      updateData.password = hashedPassword;
+    }
 
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        name: name || undefined,
-        bio: bio || undefined,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
         email: true,
-        bio: true,
+        role: true
       }
     });
 
-    return NextResponse.json(
-      { message: 'Profile updated successfully', user: updatedUser },
-      { status: 200 }
-    );
-
+    return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json(
