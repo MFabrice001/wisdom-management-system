@@ -17,7 +17,8 @@ import {
   Loader2,
   Settings,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  FileText
 } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -174,6 +175,13 @@ export default function AdminDashboard() {
               description="Review and moderate wisdom entries"
               link="/admin/wisdoms"
               color="#22c55e"
+            />
+            <ActionCard
+              icon={FileText}
+              title="Generate Reports"
+              description="Create and print system reports"
+              link="/admin/reports"
+              color="#f59e0b"
             />
             <ActionCard
               icon={RefreshCw}

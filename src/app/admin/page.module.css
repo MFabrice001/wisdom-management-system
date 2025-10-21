@@ -234,7 +234,7 @@
   font-size: 0.875rem;
 }
 
-/* Actions Grid */
+/* Actions Grid - Updated for 5 cards */
 .actionsGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -247,9 +247,35 @@
   }
 }
 
+@media (min-width: 768px) {
+  .actionsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (min-width: 1024px) {
   .actionsGrid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* For screens between 1024px and 1280px, make cards slightly smaller */
+@media (min-width: 1024px) and (max-width: 1280px) {
+  .actionCard {
+    padding: 1.5rem;
+  }
+  
+  .actionIcon {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  .actionTitle {
+    font-size: 1rem;
+  }
+  
+  .actionDescription {
+    font-size: 0.813rem;
   }
 }
 
@@ -266,6 +292,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: 100%;
 }
 
 .actionCard:hover:not(:disabled) {
@@ -355,6 +382,7 @@
   gap: 1.5rem;
   color: #6b7280;
   font-size: 0.875rem;
+  flex-wrap: wrap;
 }
 
 .wisdomStats span {
@@ -376,6 +404,12 @@
   padding: 1.5rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   text-align: center;
+  transition: all 0.2s;
+}
+
+.categoryCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .categoryName {
@@ -412,6 +446,8 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .commentUser {
@@ -430,6 +466,7 @@
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
 .commentUserName {
@@ -445,10 +482,11 @@
 .commentActions {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .viewButton {
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: #e0e7ff;
   color: #6366f1;
   border-radius: 0.5rem;
@@ -459,6 +497,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-weight: 500;
 }
 
 .viewButton:hover {
@@ -466,13 +505,15 @@
 }
 
 .deleteButton {
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: #fee2e2;
   color: #dc2626;
   border-radius: 0.5rem;
   border: none;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
 }
 
 .deleteButton:hover {
@@ -551,4 +592,38 @@
   color: #22c55e;
   border-color: #22c55e;
   transform: translateX(-4px);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 640px) {
+  .page {
+    padding: 1.5rem 0;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .refreshButton,
+  .backButton {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .statValue {
+    font-size: 2rem;
+  }
+
+  .activityValue {
+    font-size: 1.5rem;
+  }
 }
