@@ -1,0 +1,509 @@
+/* WisdomDetail.module.css */
+
+.container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #f0fdf4, #ffffff, #eff6ff);
+}
+
+.wrapper {
+  max-width: 896px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+  transition: color 0.2s;
+}
+
+.backButton:hover {
+  color: #111827;
+}
+
+.backIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Main Card */
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+/* Header Section */
+.header {
+  padding: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.headerTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.categoryBadge {
+  display: inline-block;
+  padding: 0.25rem 1rem;
+  background-color: #d1fae5;
+  color: #065f46;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.languageBadge {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+}
+
+.metadata {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.metaIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Content Section */
+.content {
+  padding: 2rem;
+}
+
+.prose {
+  font-size: 1.125rem;
+  color: #374151;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  max-width: 100%;
+}
+
+.audioPlayer {
+  margin-top: 1.5rem;
+}
+
+.audioPlayer audio {
+  width: 100%;
+}
+
+.imageContainer {
+  margin-top: 1.5rem;
+}
+
+.wisdomImage {
+  width: 100%;
+  border-radius: 0.5rem;
+  display: block;
+}
+
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.tagIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Actions Bar */
+.actionsBar {
+  padding: 1rem 2rem;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.actionsLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.actionsRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.likeButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.likeButton:hover {
+  background-color: #e5e7eb;
+}
+
+.likeButton.liked {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.likeIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.likeIcon.filled {
+  fill: currentColor;
+}
+
+.commentCount {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border-radius: 0.5rem;
+}
+
+.commentIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.iconButton {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.iconButton:hover {
+  background-color: #e5e7eb;
+}
+
+.iconButton.bookmarked {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.iconButton.bookmarked .bookmarkIcon {
+  fill: currentColor;
+}
+
+.bookmarkIcon,
+.shareIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Comments Section */
+.commentsCard {
+  margin-top: 2rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 2rem;
+}
+
+.commentsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 1.5rem;
+}
+
+.commentForm {
+  margin-bottom: 2rem;
+}
+
+.commentFormInner {
+  display: flex;
+  gap: 1rem;
+}
+
+.commentTextarea {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  resize: vertical;
+  font-family: inherit;
+  color: #000000;
+  background-color: #ffffff;
+}
+
+.commentTextarea::placeholder {
+  color: #9ca3af;
+}
+
+.commentTextarea:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.commentTextarea:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.submitButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.submitButton:hover {
+  background-color: #059669;
+}
+
+.submitButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.submitIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.loginPrompt {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  text-align: center;
+  color: #1e40af;
+}
+
+.loginLink {
+  font-weight: 600;
+  text-decoration: underline;
+  color: #1e40af;
+}
+
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.noComments {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem 0;
+}
+
+.comment {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1.5rem;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+.commentContent {
+  display: flex;
+  gap: 1rem;
+}
+
+.commentBody {
+  flex: 1;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.commentAuthor {
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.commentDivider {
+  color: #d1d5db;
+}
+
+.commentDate {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.commentText {
+  color: #374151;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* Loading State */
+.loadingContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  color: #10b981;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.notFoundContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notFoundContent {
+  text-align: center;
+}
+
+.notFoundText {
+  font-size: 1.25rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.notFoundLink {
+  color: #10b981;
+  text-decoration: none;
+}
+
+.notFoundLink:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .wrapper {
+    padding: 1.5rem 1rem;
+  }
+
+  .header {
+    padding: 1.5rem;
+  }
+
+  .content {
+    padding: 1.5rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .prose {
+    font-size: 1rem;
+  }
+
+  .actionsBar {
+    padding: 1rem 1.5rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .actionsLeft,
+  .actionsRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .commentsCard {
+    padding: 1.5rem;
+  }
+
+  .commentFormInner {
+    flex-direction: column;
+  }
+
+  .metadata {
+    font-size: 0.75rem;
+    gap: 1rem;
+  }
+}

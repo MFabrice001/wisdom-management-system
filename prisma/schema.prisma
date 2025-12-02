@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  password     String
+  name         String
+  role         Role       @default(USER)
+  profileImage String?
+  bio          String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  bookmarks    Bookmark[]
+  comments     Comment[]
+  likes        Like[]
+  wisdoms      Wisdom[]
+  polls        Poll[]
+  votes        Vote[]
+
+  @@map("users")
+}
+
+model Wisdom {
+  id          String     @id @default(cuid())
+  title       String
+  content     String
+  category    Category
+  language    Language   @default(KINYARWANDA)
+  audioUrl    String?
+  imageUrl    String?
+  tags        String[]
+  views       Int        @default(0)
+  isPublished Boolean    @default(true)
+  isFeatured  Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  authorId    String
+  bookmarks   Bookmark[]
+  comments    Comment[]
+  likes       Like[]
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([language])
+  @@index([createdAt])
+  @@map("wisdoms")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  wisdomId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wisdom    Wisdom   @relation(fields: [wisdomId], references: [id], onDelete: Cascade)
+
+  @@index([wisdomId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  wisdomId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wisdom    Wisdom   @relation(fields: [wisdomId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wisdomId])
+  @@index([wisdomId])
+  @@map("likes")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  wisdomId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wisdom    Wisdom   @relation(fields: [wisdomId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wisdomId])
+  @@index([userId])
+  @@map("bookmarks")
+}
+
+model Poll {
+  id          String   @id @default(cuid())
+  question    String
+  options     Json     // Array of {text: string, votes: number}
+  startDate   DateTime @default(now())
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdBy   String
+  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  votes       Vote[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, endDate])
+  @@index([createdBy])
+  @@map("polls")
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  pollId    String
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  option    String
+  createdAt DateTime @default(now())
+
+  @@unique([pollId, userId])
+  @@index([pollId])
+  @@index([userId])
+  @@map("votes")
+}
+
+enum Role {
+  USER
+  ELDER
+  ADMIN
+}
+
+enum Category {
+  MARRIAGE_GUIDANCE
+  AGRICULTURE
+  CONFLICT_RESOLUTION
+  HEALTH_WELLNESS
+  MORAL_CONDUCT
+  TRADITIONAL_CEREMONIES
+  PROVERBS
+  STORIES
+  LIFE_LESSONS
+  COMMUNITY_VALUES
+}
+
+enum Language {
+  KINYARWANDA
+  ENGLISH
+  FRENCH
+}
