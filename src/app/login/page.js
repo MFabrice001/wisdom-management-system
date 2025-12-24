@@ -4,18 +4,52 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LogIn, Mail, Lock, AlertCircle, Shield, User as UserIcon } from 'lucide-react';
+import { 
+  LogIn, Mail, Lock, AlertCircle, Shield, 
+  User as UserIcon, BookOpen, Heart 
+} from 'lucide-react';
 import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState('USER');
+  const [selectedRole, setSelectedRole] = useState('USER'); // Default to Citizen (USER)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Role Configurations with Descriptions based on Use Cases
+  const roles = [
+    {
+      id: 'USER',
+      label: 'Citizen',
+      icon: UserIcon,
+      description: '',
+      colorClass: styles.roleButtonUser,
+      registerLink: '/register', // Standard registration
+      registerText: 'Create Account' 
+    },
+    {
+      id: 'ELDER',
+      label: 'Elder',
+      icon: BookOpen,
+      description: '',
+      colorClass: styles.roleButtonElder,
+      registerLink: '/register?role=ELDER', // Dedicated Elder registration link
+      registerText: 'Apply as Elder Contributor'
+    },
+    {
+      id: 'ADMIN',
+      label: 'Admin',
+      icon: Shield,
+      description: '',
+      colorClass: styles.roleButtonAdmin,
+      registerLink: null, // Admins usually created manually or via secret link
+      registerText: null
+    }
+  ];
 
   const handleChange = (e) => {
     setFormData({
@@ -30,10 +64,28 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    // Validation
+    // 1. Basic Empty Field Check
     if (!formData.email || !formData.password) {
       setError('Please enter both email and password');
       setLoading(false);
+      return;
+    }
+
+    // 2. Strict Gmail Validation (Security Requirement)
+    if (!formData.email.endsWith('@gmail.com')) {
+      setError('Please use a valid @gmail.com address');
+      setLoading(false);
+      return;
+    }
+
+    // 3. Strict Password Validation (Capital Letter + Number)
+    // This enforces the security policy on login attempts as well
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 6 characters and contain a capital letter & number');
+      setLoading(false);
+      // Clear password on validation failure to ensure it is not shown/persisted in state
+      setFormData(prev => ({ ...prev, password: '' }));
       return;
     }
 
@@ -45,21 +97,33 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        setError('Invalid email or password');
+        // Clear password field on failed login attempt
+        setFormData(prev => ({ ...prev, password: '' }));
       } else {
-        // Check if user role matches selected role
+        // Fetch user details to verify role matches selected role
         const response = await fetch('/api/user/check-role');
         const data = await response.json();
         
-        if (selectedRole === 'ADMIN' && data.role !== 'ADMIN') {
-          setError('You do not have admin privileges');
-          setLoading(false);
-          return;
+        // Role mismatch check
+        if (data.role !== selectedRole && data.role !== 'ADMIN') {
+          if (selectedRole === 'ADMIN' && data.role !== 'ADMIN') {
+             setError('You do not have admin privileges');
+             setLoading(false);
+             return;
+          }
+          if (selectedRole === 'ELDER' && data.role !== 'ELDER') {
+             setError('This account is not registered as an Elder');
+             setLoading(false);
+             return;
+          }
         }
         
-        // Redirect based on role
+        // Redirect logic
         if (data.role === 'ADMIN') {
           router.push('/admin');
+        } else if (data.role === 'ELDER') {
+          router.push('/elder/dashboard'); // Dedicated Elder Dashboard
         } else {
           router.push('/wisdom');
         }
@@ -67,10 +131,14 @@ export default function LoginPage() {
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
+       // Clear password field on error
+      setFormData(prev => ({ ...prev, password: '' }));
     } finally {
       setLoading(false);
     }
   };
+
+  const currentRoleConfig = roles.find(r => r.id === selectedRole);
 
   return (
     <div className={styles.page}>
@@ -81,40 +149,37 @@ export default function LoginPage() {
             <LogIn size={32} color="white" />
           </div>
           <h2 className={styles.title}>Welcome Back</h2>
-          <p className={styles.subtitle}>Sign in to access your wisdom library</p>
+          <p className={styles.subtitle}>Sign in to Umurage Wubwenge</p>
         </div>
 
-        {/* Role Selection */}
+        {/* Role Selection Grid */}
         <div className={styles.roleSelection}>
-          <p className={styles.roleLabel}>Select Login Type</p>
+          <p className={styles.roleLabel}>Select Your Role</p>
           <div className={styles.roleGrid}>
-            <button
-              type="button"
-              onClick={() => setSelectedRole('USER')}
-              className={`${styles.roleButton} ${selectedRole === 'USER' ? styles.roleButtonActive : ''}`}
-            >
-              <UserIcon className={`${styles.roleIcon} ${selectedRole === 'USER' ? styles.roleIconActive : ''}`} />
-              <p className={`${styles.roleText} ${selectedRole === 'USER' ? styles.roleTextActive : ''}`}>
-                User Login
-              </p>
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => setSelectedRole('ADMIN')}
-              className={`${styles.roleButton} ${selectedRole === 'ADMIN' ? styles.roleButtonAdminActive : ''}`}
-            >
-              <Shield className={`${styles.roleIcon} ${selectedRole === 'ADMIN' ? styles.roleIconAdminActive : ''}`} />
-              <p className={`${styles.roleText} ${selectedRole === 'ADMIN' ? styles.roleTextAdminActive : ''}`}>
-                Admin Login
-              </p>
-            </button>
+            {roles.map((role) => (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => setSelectedRole(role.id)}
+                className={`${styles.roleButton} ${selectedRole === role.id ? styles.roleButtonActive : ''}`}
+              >
+                <role.icon 
+                  className={`${styles.roleIcon} ${selectedRole === role.id ? styles.roleIconActive : ''}`} 
+                />
+                <p className={`${styles.roleText} ${selectedRole === role.id ? styles.roleTextActive : ''}`}>
+                  {role.label}
+                </p>
+              </button>
+            ))}
+          </div>
+          {/* Dynamic Description Box */}
+          <div className={styles.roleDescriptionBox}>
+            <p>{currentRoleConfig?.description}</p>
           </div>
         </div>
 
         {/* Form Card */}
         <div className={styles.card}>
-          {/* Error Message */}
           {error && (
             <div className={styles.error}>
               <AlertCircle className={styles.errorIcon} size={20} />
@@ -123,11 +188,8 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className={styles.form}>
-            {/* Email Field */}
             <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>
-                Email Address
-              </label>
+              <label htmlFor="email" className={styles.label}>Email Address</label>
               <div className={styles.inputWrapper}>
                 <Mail className={styles.inputIcon} size={20} />
                 <input
@@ -137,17 +199,15 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={handleChange}
                   className={styles.input}
-                  placeholder="john@example.com"
+                  placeholder="name@gmail.com"
                   disabled={loading}
+                  autoComplete="off" // Prevent browser autocomplete if desired
                 />
               </div>
             </div>
 
-            {/* Password Field */}
             <div className={styles.formGroup}>
-              <label htmlFor="password" className={styles.label}>
-                Password
-              </label>
+              <label htmlFor="password" className={styles.label}>Password</label>
               <div className={styles.inputWrapper}>
                 <Lock className={styles.inputIcon} size={20} />
                 <input
@@ -159,34 +219,27 @@ export default function LoginPage() {
                   className={styles.input}
                   placeholder="••••••••"
                   disabled={loading}
+                  autoComplete="off" // Prevent browser autocomplete if desired
                 />
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
             <div className={styles.rememberRow}>
               <div className={styles.checkboxWrapper}>
-                <input
-                  id="remember"
-                  name="remember"
-                  type="checkbox"
-                  className={styles.checkbox}
-                />
-                <label htmlFor="remember" className={styles.checkboxLabel}>
-                  Remember me
-                </label>
+                <input id="remember" type="checkbox" className={styles.checkbox} />
+                <label htmlFor="remember" className={styles.checkboxLabel}>Remember me</label>
               </div>
               <Link href="/forgot-password" className={styles.forgotLink}>
                 Forgot password?
               </Link>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
               className={`${styles.submitButton} ${
-                selectedRole === 'ADMIN' ? styles.submitButtonAdmin : styles.submitButtonUser
+                selectedRole === 'ADMIN' ? styles.submitButtonAdmin : 
+                selectedRole === 'ELDER' ? styles.submitButtonElder : styles.submitButtonUser
               }`}
             >
               {loading ? (
@@ -196,21 +249,33 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  {selectedRole === 'ADMIN' ? <Shield size={20} /> : <LogIn size={20} />}
-                  <span>Sign In as {selectedRole === 'ADMIN' ? 'Admin' : 'User'}</span>
+                  <LogIn size={20} />
+                  <span>Sign In as {currentRoleConfig?.label}</span>
                 </>
               )}
             </button>
           </form>
 
-          {/* Register Link */}
           <div className={styles.footer}>
-            <p className={styles.footerText}>
-              Don't have an account?{' '}
-              <Link href="/register" className={styles.registerLink}>
-                Create Account
-              </Link>
-            </p>
+            {/* DYNAMIC REGISTRATION LINK BASED ON ROLE */}
+            {currentRoleConfig?.registerLink ? (
+              <p className={styles.footerText}>
+                New here?{' '}
+                <Link href={currentRoleConfig.registerLink} className={styles.registerLink}>
+                  {currentRoleConfig.registerText}
+                </Link>
+              </p>
+            ) : (
+              <p className={styles.footerText}>
+                Admin accounts are invitation only.
+              </p>
+            )}
+            
+            <div className={styles.guestLinkWrapper}>
+               <Link href="/wisdom" className={styles.guestLink}>
+                 Continue as Guest (Read Only)
+               </Link>
+            </div>
           </div>
         </div>
       </div>

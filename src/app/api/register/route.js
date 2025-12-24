@@ -1,16 +1,13 @@
-// src/app/api/register/route.js
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-
-
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const { name, email, password, role, nationalId, residence } = body;
 
-    // Validation
+    // 1. Basic Validation
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'All fields are required' },
@@ -18,16 +15,15 @@ export async function POST(request) {
       );
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // 2. Email Validation (Gmail only as requested)
+    if (!email.endsWith('@gmail.com')) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'Please use a valid @gmail.com address' },
         { status: 400 }
       );
     }
 
-    // Password length validation
+    // 3. Password Length Validation
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'Password must be at least 6 characters' },
@@ -35,7 +31,7 @@ export async function POST(request) {
       );
     }
 
-    // Check if user already exists
+    // 4. Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
@@ -47,20 +43,51 @@ export async function POST(request) {
       );
     }
 
-    // Hash password
+    // 5. Determine Role and Validate Elder Fields
+    let roleToAssign = 'USER'; // Default to Citizen
+    
+    if (role === 'ELDER') {
+        roleToAssign = 'ELDER';
+        
+        // Elder specific validation
+        if (!nationalId || !residence) {
+            return NextResponse.json(
+                { error: 'National ID and Residence are required for Elders' }, 
+                { status: 400 }
+            );
+        }
+
+        // Check if NID is unique
+        const existingNid = await prisma.user.findUnique({
+            where: { nationalId }
+        });
+        if (existingNid) {
+            return NextResponse.json(
+                { error: 'This National ID is already registered' },
+                { status: 400 }
+            );
+        }
+    }
+
+    // 6. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // 7. Create user
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: 'USER',
+        role: roleToAssign,
+        // Only save these if role is ELDER
+        nationalId: roleToAssign === 'ELDER' ? nationalId : undefined,
+        residence: roleToAssign === 'ELDER' ? residence : undefined,
+        // Elders might need manual verification (default false)
+        isVerified: roleToAssign === 'ELDER' ? false : true 
       }
     });
 
-    // Return success (don't send password back)
+    // 8. Return success
     return NextResponse.json(
       {
         message: 'User created successfully',

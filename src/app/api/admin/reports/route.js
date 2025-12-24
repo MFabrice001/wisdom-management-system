@@ -3,240 +3,231 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 
-export async function GET(request) {
-  try {
-    const session = await getServerSession(authOptions);
+export async function GET(req) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
 
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get('type');
+  const userId = searchParams.get('userId');
+  const category = searchParams.get('category');
+
+  try {
+    let items = [];
+    let title = "";
+    let summary = null;
+
+    if (type === 'GENERAL_SYSTEM') {
+      title = "General System Report";
+      
+      // Get system statistics
+      const [totalUsers, totalWisdoms, totalComments, totalLikes, totalPolls, totalSuggestions, totalCertificates] = await Promise.all([
+        prisma.user.count(),
+        prisma.wisdom.count(),
+        prisma.comment.count(),
+        prisma.like.count(),
+        prisma.poll.count(),
+        prisma.suggestion.count(),
+        prisma.certificate.count()
+      ]);
+
+      // Get recent new users (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const newUsers = await prisma.user.findMany({
+        where: {
+          createdAt: {
+            gte: thirtyDaysAgo
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true
+        }
+      });
+
+      // Get recent wisdom entries (last 30 days)
+      const recentWisdoms = await prisma.wisdom.findMany({
+        where: {
+          createdAt: {
+            gte: thirtyDaysAgo
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          author: {
+            select: { name: true }
+          }
+        }
+      });
+
+      summary = {
+        totalUsers,
+        totalWisdoms,
+        totalComments,
+        totalLikes,
+        totalPolls,
+        totalSuggestions,
+        totalCertificates,
+        newUsersCount: newUsers.length,
+        recentWisdomsCount: recentWisdoms.length
+      };
+
+      // Combine new users and recent wisdoms for the items list
+      items = [
+        ...newUsers.map(user => ({
+          type: 'New User',
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          date: new Date(user.createdAt).toLocaleDateString(),
+          details: `Joined as ${user.role}`
+        })),
+        ...recentWisdoms.map(wisdom => ({
+          type: 'New Wisdom',
+          name: wisdom.author.name,
+          email: wisdom.title,
+          role: wisdom.category,
+          date: new Date(wisdom.createdAt).toLocaleDateString(),
+          details: `${wisdom.views} views`
+        }))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+    else if (type === 'USER_SPECIFIC') {
+      if (!userId) return NextResponse.json({ error: "User ID required" }, { status: 400 });
+      
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      
+      title = `Report for ${user.name}`;
+      
+      const whereClause = { authorId: userId };
+      if (category && category !== 'ALL') {
+        whereClause.category = category;
+        title += ` - ${category.replace('_', ' ')}`;
+      }
+
+      const wisdoms = await prisma.wisdom.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          comments: true,
+          likes: true,
+          bookmarks: true
+        }
+      });
+
+      items = wisdoms.map(w => ({
+        title: w.title,
+        category: w.category.replace('_', ' '),
+        views: w.views,
+        likes: w.likes.length,
+        comments: w.comments.length,
+        bookmarks: w.bookmarks.length,
+        date: new Date(w.createdAt).toLocaleDateString(),
+        status: w.isPublished ? 'Published' : 'Draft'
+      }));
+
+      summary = {
+        totalWisdoms: wisdoms.length,
+        totalViews: wisdoms.reduce((sum, w) => sum + w.views, 0),
+        totalLikes: wisdoms.reduce((sum, w) => sum + w.likes.length, 0),
+        totalComments: wisdoms.reduce((sum, w) => sum + w.comments.length, 0)
+      };
+    }
+    else if (type === 'WISDOM_ENTRIES') {
+      title = "Wisdom Contributors Report";
+      
+      const users = await prisma.user.findMany({
+        include: {
+          wisdoms: true
+        }
+      });
+
+      items = users
+        .filter(user => user.wisdoms.length > 0)
+        .map(user => ({
+          user: user.name,
+          email: user.email,
+          role: user.role,
+          count: user.wisdoms.length
+        }))
+        .sort((a, b) => b.count - a.count);
+    }
+    else if (type === 'SUGGESTIONS_ACTIVITY') {
+      title = "Suggestions Activity Report";
+      
+      const suggestions = await prisma.suggestion.findMany({
+        include: {
+          user: {
+            select: { name: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      items = suggestions.map(s => ({
+        user: s.user.name,
+        title: s.title,
+        status: s.status,
+        date: s.createdAt
+      }));
+    }
+    else if (type === 'SYSTEM_OVERVIEW') {
+      title = "System Overview Report";
+      
+      const [totalUsers, totalWisdoms, totalComments, totalLikes, totalPolls] = await Promise.all([
+        prisma.user.count(),
+        prisma.wisdom.count(),
+        prisma.comment.count(),
+        prisma.like.count(),
+        prisma.poll.count()
+      ]);
+
+      items = [
+        { metric: 'Total Users', value: totalUsers },
+        { metric: 'Total Wisdom Entries', value: totalWisdoms },
+        { metric: 'Total Comments', value: totalComments },
+        { metric: 'Total Likes', value: totalLikes },
+        { metric: 'Total Polls', value: totalPolls }
+      ];
     }
 
-    const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-
-    const start = startDate ? new Date(startDate) : new Date(0);
-    const end = endDate ? new Date(endDate) : new Date();
-    end.setHours(23, 59, 59, 999); // End of day
-
-    // Get all data
-    const [
-      allUsers,
-      allWisdoms,
-      allComments,
-      allLikes,
-      allBookmarks,
-      newUsers,
-      newWisdoms,
-      newComments,
-      newLikes,
-      usersByRole,
-      wisdomsByCategory,
-      topWisdoms
-    ] = await Promise.all([
-      // All Users
-      prisma.user.count(),
-      
-      // All Wisdoms
-      prisma.wisdom.count(),
-      
-      // All Comments
-      prisma.comment.count(),
-      
-      // All Likes
-      prisma.like.count(),
-      
-      // All Bookmarks
-      prisma.bookmark.count(),
-      
-      // New Users in period
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: start,
-            lte: end
-          }
-        }
-      }),
-      
-      // New Wisdoms in period
-      prisma.wisdom.count({
-        where: {
-          createdAt: {
-            gte: start,
-            lte: end
-          }
-        }
-      }),
-      
-      // New Comments in period
-      prisma.comment.count({
-        where: {
-          createdAt: {
-            gte: start,
-            lte: end
-          }
-        }
-      }),
-      
-      // New Likes in period
-      prisma.like.count({
-        where: {
-          createdAt: {
-            gte: start,
-            lte: end
-          }
-        }
-      }),
-      
-      // Users by Role
-      prisma.user.groupBy({
-        by: ['role'],
-        _count: true
-      }),
-      
-      // Wisdoms by Category
-      prisma.wisdom.groupBy({
-        by: ['category'],
-        _count: true
-      }),
-      
-      // Top Wisdoms
-      prisma.wisdom.findMany({
-        take: 10,
-        orderBy: {
-          views: 'desc'
-        },
-        select: {
-          id: true,
-          title: true,
-          views: true,
-          _count: {
-            select: {
-              likes: true,
-              comments: true
-            }
-          }
-        }
-      })
-    ]);
-
-    // Get additional wisdom stats
-    const wisdomsData = await prisma.wisdom.findMany({
-      select: {
-        views: true,
-        isPublished: true,
-        isFeatured: true
-      }
-    });
-
-    const totalViews = wisdomsData.reduce((sum, w) => sum + w.views, 0);
-    const avgViews = allWisdoms > 0 ? Math.round(totalViews / allWisdoms) : 0;
-    const published = wisdomsData.filter(w => w.isPublished).length;
-    const featured = wisdomsData.filter(w => w.isFeatured).length;
-
-    // Active users (users who created wisdom, commented, or liked in period)
-    const activeUsersData = await prisma.user.findMany({
-      where: {
-        OR: [
-          {
-            wisdoms: {
-              some: {
-                createdAt: {
-                  gte: start,
-                  lte: end
-                }
-              }
-            }
-          },
-          {
-            comments: {
-              some: {
-                createdAt: {
-                  gte: start,
-                  lte: end
-                }
-              }
-            }
-          },
-          {
-            likes: {
-              some: {
-                createdAt: {
-                  gte: start,
-                  lte: end
-                }
-              }
-            }
-          }
-        ]
-      }
-    });
-
-    const activeUsers = activeUsersData.length;
-
-    // Format users by role
-    const roleStats = {};
-    usersByRole.forEach(item => {
-      roleStats[item.role] = item._count;
-    });
-
-    // Format category stats with percentages
-    const categoryStats = wisdomsByCategory.map(cat => ({
-      category: cat.category,
-      count: cat._count,
-      percentage: allWisdoms > 0 ? ((cat._count / allWisdoms) * 100).toFixed(1) : 0
-    }));
-
-    // Format top wisdoms
-    const formattedTopWisdoms = topWisdoms.map(wisdom => ({
-      id: wisdom.id,
-      title: wisdom.title,
-      views: wisdom.views,
-      likesCount: wisdom._count.likes,
-      commentsCount: wisdom._count.comments
-    }));
-
-    // Build report data
-    const reportData = {
-      summary: {
-        totalUsers: allUsers,
-        totalWisdoms: allWisdoms,
-        totalComments: allComments,
-        totalLikes: allLikes
-      },
-      userStats: {
-        total: allUsers,
-        newUsers: newUsers,
-        activeUsers: activeUsers,
-        byRole: roleStats
-      },
-      wisdomStats: {
-        total: allWisdoms,
-        newWisdoms: newWisdoms,
-        published: published,
-        featured: featured,
-        totalViews: totalViews,
-        avgViews: avgViews
-      },
-      categoryStats: categoryStats,
-      topWisdoms: formattedTopWisdoms,
-      engagementStats: {
-        totalComments: allComments,
-        newComments: newComments,
-        totalLikes: allLikes,
-        newLikes: newLikes,
-        totalBookmarks: allBookmarks
-      }
-    };
-
-    return NextResponse.json(reportData);
+    return NextResponse.json({ title, items, summary }, { status: 200 });
 
   } catch (error) {
-    console.error('Error generating report:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate report' },
-      { status: 500 }
-    );
+    console.error('Error fetching report:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+// Get all users for the dropdown
+export async function POST(req) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    return NextResponse.json({ users }, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, X, Upload, FileText } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function AddWisdomPage() {
@@ -23,6 +23,7 @@ export default function AddWisdomPage() {
     tags: [],
     audioUrl: '',
     imageUrl: '',
+    documentFile: null,
   });
 
   // Redirect if not logged in
@@ -57,6 +58,40 @@ export default function AddWisdomPage() {
       [e.target.name]: e.target.value
     });
     setError('');
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please select a PDF or Word document (.pdf, .doc, .docx)');
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
+        return;
+      }
+      
+      setFormData({
+        ...formData,
+        documentFile: file
+      });
+      setError('');
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFormData({
+      ...formData,
+      documentFile: null
+    });
   };
 
   const handleAddTag = (e) => {
@@ -102,12 +137,21 @@ export default function AddWisdomPage() {
     }
 
     try {
+      const submitData = new FormData();
+      
+      Object.keys(formData).forEach(key => {
+        if (key === 'tags') {
+          submitData.append(key, JSON.stringify(formData[key]));
+        } else if (key === 'documentFile' && formData[key]) {
+          submitData.append('document', formData[key]);
+        } else if (key !== 'documentFile') {
+          submitData.append(key, formData[key]);
+        }
+      });
+
       const response = await fetch('/api/wisdom', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        body: submitData,
       });
 
       const data = await response.json();
@@ -315,6 +359,51 @@ export default function AddWisdomPage() {
                 disabled={loading || success}
               />
               <p className={styles.helpText}>Link to an audio recording of the wisdom</p>
+            </div>
+
+            {/* Document Upload */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                Supporting Document (Optional)
+              </label>
+              <div className={styles.fileUpload}>
+                {!formData.documentFile ? (
+                  <>
+                    <input
+                      type="file"
+                      id="documentFile"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileChange}
+                      className={styles.fileInput}
+                      disabled={loading || success}
+                    />
+                    <label htmlFor="documentFile" className={styles.fileLabel}>
+                      <Upload size={20} />
+                      <span>Upload PDF or Word Document</span>
+                      <small>Max 10MB</small>
+                    </label>
+                  </>
+                ) : (
+                  <div className={styles.fileSelected}>
+                    <FileText size={20} />
+                    <div className={styles.fileInfo}>
+                      <span className={styles.fileName}>{formData.documentFile.name}</span>
+                      <small className={styles.fileSize}>
+                        {(formData.documentFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveFile}
+                      className={styles.fileRemove}
+                      disabled={loading || success}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className={styles.helpText}>Upload a PDF or Word document with additional details</p>
             </div>
 
             {/* Image URL */}

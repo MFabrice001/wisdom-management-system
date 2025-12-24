@@ -1,81 +1,61 @@
 .page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #eff6ff 100%);
-  padding: 3rem 0;
+  background-color: #f9fafb; /* gray-50 */
+  padding: 3rem 1rem;
 }
 
 .container {
-  max-width: 1400px;
+  max-width: 72rem; /* max-w-6xl */
   margin: 0 auto;
-  padding: 0 2rem;
 }
 
-.loading {
+.loadingWrapper {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 400px;
+  padding: 4rem;
 }
 
 .spinner {
+  width: 2rem;
+  height: 2rem;
+  color: #16a34a; /* green-600 */
   animation: spin 1s linear infinite;
-  color: #22c55e;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.headerTop {
-  margin-bottom: 1.5rem;
-}
-
-.backButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #6b7280;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-  background: white;
-  border: 1px solid #e5e7eb;
-}
-
-.backButton:hover {
-  color: #3b82f6;
-  border-color: #3b82f6;
-  transform: translateX(-4px);
-}
-
+/* Header */
 .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .title {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: 2rem;
+  font-weight: 800;
   color: #111827;
-  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.subtitle {
-  color: #6b7280;
-  font-size: 1.125rem;
+.titleIcon {
+  color: #3b82f6; /* blue-500 */
 }
 
-.searchBar {
+.searchWrapper {
   position: relative;
-  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 20rem;
 }
 
 .searchIcon {
   position: absolute;
-  left: 1rem;
+  left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   color: #9ca3af;
@@ -83,155 +63,202 @@
 
 .searchInput {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 3rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  font-size: 1rem;
-  background: white;
+  outline: none;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
 }
 
 .searchInput:focus {
-  outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.usersList {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.userCard {
+/* Table Card */
+.tableCard {
   background: white;
   border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #f3f4f6;
+  overflow: hidden; /* For rounded corners on table */
+  overflow-x: auto; /* Responsive table */
 }
 
-.userInfo {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex: 1;
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
 }
 
-.userAvatar {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  flex-shrink: 0;
+.thead {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.userDetails {
-  flex: 1;
+.th {
+  padding: 1rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.1s;
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.tr:hover {
+  background-color: #f9fafb;
+}
+
+.td {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+}
+
+.tdText {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+  color: #4b5563;
+  font-size: 0.875rem;
 }
 
 .userName {
-  font-size: 1.25rem;
-  font-weight: bold;
+  font-weight: 600;
   color: #111827;
-  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
 }
 
-.userEmail,
-.userDate {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
+.userEmail {
   color: #6b7280;
-  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
 }
 
-.userStats {
-  display: flex;
-  gap: 1rem;
-}
-
-.statBadge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  background: #f3f4f6;
-  border-radius: 0.5rem;
-}
-
-.statValue {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #3b82f6;
-}
-
-.statLabel {
+/* Role Badges */
+.roleBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
   font-size: 0.75rem;
-  color: #6b7280;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
-.userActions {
-  display: flex;
-  gap: 0.5rem;
+.admin {
+  background-color: #f3e8ff; /* purple-100 */
+  color: #7e22ce; /* purple-700 */
+}
+
+.elder {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1d4ed8; /* blue-700 */
+}
+
+.user {
+  background-color: #dcfce7; /* green-100 */
+  color: #15803d; /* green-700 */
+}
+
+/* Eligibility Badges */
+.badgesList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.eligibleBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #047857; /* emerald-700 */
+    background-color: #ecfdf5;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.noEligibility {
+    color: #d1d5db;
+}
+
+/* Actions */
+.tdActions {
+    padding: 1rem 1.5rem;
+}
+
+.awardButton {
+  display: inline-flex;
   align-items: center;
-}
-
-.roleSelect {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #fef9c3; /* yellow-100 */
+  color: #a16207; /* yellow-800 */
+  border: 1px solid #fef08a;
   border-radius: 0.5rem;
-  font-size: 0.875rem;
-  background: white;
-  cursor: pointer;
-}
-
-.roleSelect:focus {
-  outline: none;
-  border-color: #3b82f6;
-}
-
-.roleSelect:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.deleteButton {
-  padding: 0.5rem;
-  background: #fee2e2;
-  color: #dc2626;
-  border: none;
-  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.deleteButton:hover:not(:disabled) {
-  background: #fecaca;
+.awardButton:hover:not(:disabled) {
+  background-color: #fde047; /* yellow-300 */
 }
 
-.deleteButton:disabled {
-  opacity: 0.5;
+.awardButton:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.empty {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #6b7280;
+.emptyState {
+    padding: 3rem;
+    text-align: center;
+    color: #6b7280;
 }
 
-.emptyIcon {
-  color: #d1d5db;
-  margin-bottom: 1rem;
+/* ... existing styles ... */
+
+.roleSelect {
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    cursor: pointer;
+    outline: none;
+}
+
+.roleSelect:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Specific Role Colors */
+.user { /* Citizen */
+    background-color: #dcfce7; 
+    color: #15803d; 
+    border-color: #bbf7d0;
+}
+
+.elder {
+    background-color: #dbeafe; 
+    color: #1d4ed8; 
+    border-color: #bfdbfe;
+}
+
+.admin {
+    background-color: #f3e8ff; 
+    color: #7e22ce; 
+    border-color: #d8b4fe;
 }

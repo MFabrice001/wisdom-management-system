@@ -8,7 +8,7 @@
 }
 
 .container {
-  max-width: 28rem;
+  max-width: 32rem; /* Widened slightly for 3 columns */
   width: 100%;
 }
 
@@ -46,69 +46,79 @@
 
 .roleLabel {
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #374151;
   text-align: center;
   margin-bottom: 0.75rem;
 }
 
+/* 3-Column Grid for Roles */
 .roleGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .roleButton {
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 0.75rem;
-  border: 2px solid #d1d5db;
+  border: 2px solid #e5e7eb;
   background: white;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .roleButton:hover {
   border-color: #22c55e;
+  transform: translateY(-2px);
 }
 
 .roleButtonActive {
   border-color: #22c55e;
   background: #f0fdf4;
-}
-
-.roleButtonAdminActive {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .roleIcon {
-  width: 2rem;
-  height: 2rem;
-  margin: 0 auto 0.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.5rem;
   color: #9ca3af;
 }
 
 .roleIconActive {
-  color: #22c55e;
-}
-
-.roleIconAdminActive {
-  color: #3b82f6;
+  color: #16a34a; /* Green for User/Citizen */
 }
 
 .roleText {
   font-size: 0.875rem;
   font-weight: 500;
   color: #6b7280;
-  text-align: center;
 }
 
 .roleTextActive {
-  color: #22c55e;
+  color: #16a34a;
+  font-weight: 600;
 }
 
-.roleTextAdminActive {
-  color: #3b82f6;
+/* Description Box */
+.roleDescriptionBox {
+  background-color: #f9fafb;
+  border: 1px dashed #d1d5db;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #4b5563;
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .card {
@@ -120,34 +130,29 @@
 
 .error {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   background: #fee2e2;
   border: 1px solid #fecaca;
   border-radius: 0.5rem;
-  padding: 1rem;
+  padding: 0.75rem;
   margin-bottom: 1.5rem;
+  font-size: 0.875rem;
 }
 
 .errorIcon {
-  flex-shrink: 0;
-  margin-top: 0.125rem;
   color: #dc2626;
 }
 
 .errorText {
   color: #991b1b;
+  margin: 0;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
+  gap: 1.25rem;
 }
 
 .label {
@@ -172,30 +177,18 @@
 }
 
 .input {
-  display: block;
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 1rem;
-  color: #111827;
-  background: white;
   transition: all 0.2s;
-}
-
-.input::placeholder {
-  color: #9ca3af;
 }
 
 .input:focus {
   outline: none;
   border-color: #22c55e;
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-}
-
-.input:disabled {
-  background: #f3f4f6;
-  cursor: not-allowed;
 }
 
 .rememberRow {
@@ -207,39 +200,35 @@
 .checkboxWrapper {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .checkbox {
   width: 1rem;
   height: 1rem;
-  border-radius: 0.25rem;
-  border: 1px solid #d1d5db;
-  color: #22c55e;
+  accent-color: #22c55e;
 }
 
 .checkboxLabel {
-  margin-left: 0.5rem;
   font-size: 0.875rem;
   color: #374151;
 }
 
 .forgotLink {
   font-size: 0.875rem;
-  color: #22c55e;
+  color: #2563eb;
   text-decoration: none;
-  font-weight: 500;
 }
 
 .forgotLink:hover {
-  color: #16a34a;
+  text-decoration: underline;
 }
 
 .submitButton {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem;
   border-radius: 0.5rem;
   font-weight: 600;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -247,59 +236,76 @@
   color: white;
   border: none;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
+/* Button Colors per Role */
 .submitButtonUser {
-  background: #22c55e;
+  background: #16a34a; /* Green */
 }
+.submitButtonUser:hover { background: #15803d; }
 
-.submitButtonUser:hover:not(:disabled) {
-  background: #16a34a;
+.submitButtonElder {
+  background: #9333ea; /* Purple */
 }
+.submitButtonElder:hover { background: #7e22ce; }
 
 .submitButtonAdmin {
-  background: #3b82f6;
+  background: #2563eb; /* Blue */
 }
-
-.submitButtonAdmin:hover:not(:disabled) {
-  background: #2563eb;
-}
+.submitButtonAdmin:hover { background: #1d4ed8; }
 
 .submitButton:disabled {
   background: #9ca3af;
   cursor: not-allowed;
 }
 
-.spinner {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid transparent;
-  border-top-color: white;
-  border-radius: 9999px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .footer {
   margin-top: 1.5rem;
   text-align: center;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 1.5rem;
 }
 
 .footerText {
   color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
 }
 
 .registerLink {
-  color: #22c55e;
-  text-decoration: none;
+  color: #16a34a;
   font-weight: 600;
+  text-decoration: none;
 }
 
 .registerLink:hover {
-  color: #16a34a;
+  text-decoration: underline;
+}
+
+.guestLinkWrapper {
+  margin-top: 0.5rem;
+}
+
+.guestLink {
+  font-size: 0.875rem;
+  color: #4b5563;
+  text-decoration: underline;
+}
+
+.guestLink:hover {
+  color: #111827;
+}
+
+.spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

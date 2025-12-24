@@ -1,70 +1,72 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { Printer, BookOpen, MessageSquare, Activity, ArrowLeft, Users, FileText } from 'lucide-react';
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  FileText, 
-  Download, 
-  Printer, 
-  Loader2,
-  Calendar,
-  TrendingUp,
-  Users,
-  BookOpen,
-  MessageCircle,
-  Heart,
-  Award
-} from 'lucide-react';
 import styles from './page.module.css';
 
 export default function ReportsPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
+  const [reportType, setReportType] = useState('GENERAL_SYSTEM');
   const [reportData, setReportData] = useState(null);
-  const [dateRange, setDateRange] = useState({
-    startDate: '',
-    endDate: ''
-  });
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+
+  const categories = [
+    { value: 'ALL', label: 'All Domains' },
+    { value: 'MARRIAGE_GUIDANCE', label: 'Marriage Guidance' },
+    { value: 'AGRICULTURE', label: 'Agriculture' },
+    { value: 'CONFLICT_RESOLUTION', label: 'Conflict Resolution' },
+    { value: 'HEALTH_WELLNESS', label: 'Health & Wellness' },
+    { value: 'MORAL_CONDUCT', label: 'Moral Conduct' },
+    { value: 'TRADITIONAL_CEREMONIES', label: 'Traditional Ceremonies' },
+    { value: 'PROVERBS', label: 'Proverbs' },
+    { value: 'STORIES', label: 'Stories' },
+    { value: 'LIFE_LESSONS', label: 'Life Lessons' },
+    { value: 'COMMUNITY_VALUES', label: 'Community Values' }
+  ];
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (session?.user?.role !== 'ADMIN') {
-      router.push('/');
-    } else {
-      setLoading(false);
-      // Set default dates (last 30 days)
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - 30);
-      
-      setDateRange({
-        startDate: start.toISOString().split('T')[0],
-        endDate: end.toISOString().split('T')[0]
-      });
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/reports', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
     }
-  }, [status, session, router]);
+  };
 
   const generateReport = async () => {
+    setLoading(true);
     try {
-      setGenerating(true);
-      const response = await fetch(
-        `/api/admin/reports?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
-      );
+      let url = `/api/admin/reports?type=${reportType}`;
+      if (reportType === 'USER_SPECIFIC') {
+        if (!selectedUser) {
+          alert('Please select a user');
+          setLoading(false);
+          return;
+        }
+        url += `&userId=${selectedUser}&category=${selectedCategory}`;
+      }
       
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
         setReportData(data);
+      } else {
+        alert('Failed to generate report');
       }
     } catch (error) {
       console.error('Error generating report:', error);
     } finally {
-      setGenerating(false);
+      setLoading(false);
     }
   };
 
@@ -72,389 +74,327 @@ export default function ReportsPage() {
     window.print();
   };
 
-  const handleDownload = () => {
-    // Create a printable HTML version
-    const printWindow = window.open('', '', 'width=800,height=600');
-    const reportHTML = document.getElementById('report-content').innerHTML;
-    
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Wisdom Management System Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { color: #22c55e; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f3f4f6; font-weight: bold; }
-            .stat-card { display: inline-block; margin: 10px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-            .stat-value { font-size: 2em; font-weight: bold; color: #22c55e; }
-            .stat-label { color: #6b7280; }
-            @media print {
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          ${reportHTML}
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <Loader2 className={styles.spinner} size={48} />
-      </div>
-    );
-  }
-
   return (
     <div className={styles.page}>
-      <div className={styles.container}>
-        {/* Header */}
-        <div className={styles.headerTop}>
-          <Link href="/admin" className={styles.backButton}>
-            <ArrowLeft size={20} />
-            Back to Dashboard
-          </Link>
-        </div>
-
-        <div className={styles.header}>
-          <div>
-            <h1 className={styles.title}>
-              <FileText size={32} style={{ display: 'inline', marginRight: '0.5rem' }} />
-              Generate Reports
-            </h1>
-            <p className={styles.subtitle}>Create comprehensive system reports</p>
+      {/* Configuration Section (Hidden when printing) */}
+      <div className={`${styles.configSection} print:hidden`}>
+        <div className={styles.container}>
+          <div className={styles.header}>
+            <Link href="/admin" className={styles.backButton}>
+              <ArrowLeft size={16} /> Back to Dashboard
+            </Link>
+            <h1 className={styles.title}>Generate Reports</h1>
           </div>
-        </div>
-
-        {/* Report Configuration */}
-        <div className={styles.configSection}>
-          <h2 className={styles.sectionTitle}>Report Configuration</h2>
           
-          <div className={styles.dateSelector}>
-            <div className={styles.formGroup}>
-              <label htmlFor="startDate" className={styles.label}>
-                Start Date
-              </label>
-              <input
-                id="startDate"
-                type="date"
-                value={dateRange.startDate}
-                onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                className={styles.input}
-              />
+          <div className={styles.controlsCard}>
+            <div className={styles.grid}>
+              <button 
+                onClick={() => setReportType('GENERAL_SYSTEM')}
+                className={`${styles.typeButton} ${reportType === 'GENERAL_SYSTEM' ? styles.active : ''}`}
+              >
+                <Activity size={20} /> General System Report
+              </button>
+              <button 
+                onClick={() => setReportType('USER_SPECIFIC')}
+                className={`${styles.typeButton} ${reportType === 'USER_SPECIFIC' ? styles.active : ''}`}
+              >
+                <Users size={20} /> User Specific Report
+              </button>
+              <button 
+                onClick={() => setReportType('WISDOM_ENTRIES')}
+                className={`${styles.typeButton} ${reportType === 'WISDOM_ENTRIES' ? styles.active : ''}`}
+              >
+                <BookOpen size={20} /> Wisdom Contributors
+              </button>
+              <button 
+                onClick={() => setReportType('SUGGESTIONS_ACTIVITY')}
+                className={`${styles.typeButton} ${reportType === 'SUGGESTIONS_ACTIVITY' ? styles.active : ''}`}
+              >
+                <MessageSquare size={20} /> Suggestions Activity
+              </button>
+              <button 
+                onClick={() => setReportType('SYSTEM_OVERVIEW')}
+                className={`${styles.typeButton} ${reportType === 'SYSTEM_OVERVIEW' ? styles.active : ''}`}
+              >
+                <FileText size={20} /> System Overview
+              </button>
             </div>
 
-            <div className={styles.formGroup}>
-              <label htmlFor="endDate" className={styles.label}>
-                End Date
-              </label>
-              <input
-                id="endDate"
-                type="date"
-                value={dateRange.endDate}
-                onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                className={styles.input}
-              />
-            </div>
+            {/* User Selection for User-Specific Reports */}
+            {reportType === 'USER_SPECIFIC' && (
+              <div className={styles.userSelection}>
+                <div className={styles.selectGroup}>
+                  <label>Select User:</label>
+                  <select 
+                    value={selectedUser} 
+                    onChange={(e) => setSelectedUser(e.target.value)}
+                    className={styles.select}
+                  >
+                    <option value="">Choose a user...</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} ({user.email}) - {user.role}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.selectGroup}>
+                  <label>Select Domain:</label>
+                  <select 
+                    value={selectedCategory} 
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className={styles.select}
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
-            <button
-              onClick={generateReport}
-              disabled={generating || !dateRange.startDate || !dateRange.endDate}
-              className={styles.generateButton}
+            <button 
+              onClick={generateReport} 
+              className={styles.generateBtn}
+              disabled={loading}
             >
-              {generating ? (
-                <>
-                  <Loader2 className={styles.spinning} size={18} />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <FileText size={18} />
-                  Generate Report
-                </>
-              )}
+              {loading ? 'Generating...' : 'Generate Report'}
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Report Display */}
-        {reportData && (
-          <>
-            <div className={styles.actionBar}>
-              <button onClick={handlePrint} className={styles.printButton}>
-                <Printer size={18} />
-                Print Report
-              </button>
-              <button onClick={handleDownload} className={styles.downloadButton}>
-                <Download size={18} />
-                Download PDF
-              </button>
-            </div>
-
-            <div id="report-content" className={styles.reportContent}>
-              {/* Report Header */}
-              <div className={styles.reportHeader}>
-                <h1 className={styles.reportTitle}>Wisdom Management System</h1>
-                <h2 className={styles.reportSubtitle}>System Report</h2>
-                <p className={styles.reportDate}>
-                  Report Period: {new Date(dateRange.startDate).toLocaleDateString()} - {new Date(dateRange.endDate).toLocaleDateString()}
-                </p>
-                <p className={styles.reportGenerated}>
-                  Generated on: {new Date().toLocaleString()}
-                </p>
-              </div>
-
-              {/* Executive Summary */}
-              <div className={styles.reportSection}>
-                <h3 className={styles.reportSectionTitle}>
-                  <TrendingUp size={20} />
-                  Executive Summary
-                </h3>
-                <div className={styles.summaryGrid}>
-                  <SummaryCard
-                    icon={Users}
-                    label="Total Users"
-                    value={reportData.summary.totalUsers}
-                    color="#3b82f6"
-                  />
-                  <SummaryCard
-                    icon={BookOpen}
-                    label="Total Wisdom"
-                    value={reportData.summary.totalWisdoms}
-                    color="#22c55e"
-                  />
-                  <SummaryCard
-                    icon={MessageCircle}
-                    label="Total Comments"
-                    value={reportData.summary.totalComments}
-                    color="#a855f7"
-                  />
-                  <SummaryCard
-                    icon={Heart}
-                    label="Total Likes"
-                    value={reportData.summary.totalLikes}
-                    color="#ef4444"
-                  />
+      {/* The Printable Report */}
+      {reportData && (
+        <div className={styles.reportWrapper}>
+          <div className={styles.reportContainer} id="printable-area">
+            {/* Header */}
+            <div className={styles.reportHeader}>
+              <div className={styles.headerTop}>
+                <div className={styles.logoArea}>
+                   <div className={styles.logoPlaceholder}>CWMS</div> 
+                </div>
+                <div className={styles.companyInfo}>
+                  <h2 className={styles.companyName}>COMMUNITY WISDOM MANAGEMENT SYSTEM</h2>
+                  <p>P.O. Box 2461, Kigali, Rwanda</p>
+                  <p>Website: www.cwms.rw</p>
                 </div>
               </div>
+              
+              <div className={styles.divider}></div>
+              
+              <h3 className={styles.reportTitle}>{reportData.title}</h3>
+            </div>
 
-              {/* User Statistics */}
-              <div className={styles.reportSection}>
-                <h3 className={styles.reportSectionTitle}>
-                  <Users size={20} />
-                  User Statistics
-                </h3>
-                <table className={styles.reportTable}>
-                  <thead>
-                    <tr>
-                      <th>Metric</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Total Registered Users</td>
-                      <td>{reportData.userStats.total}</td>
-                    </tr>
-                    <tr>
-                      <td>New Users (Period)</td>
-                      <td>{reportData.userStats.newUsers}</td>
-                    </tr>
-                    <tr>
-                      <td>Active Users (Period)</td>
-                      <td>{reportData.userStats.activeUsers}</td>
-                    </tr>
-                    <tr>
-                      <td>Users by Role - Admin</td>
-                      <td>{reportData.userStats.byRole.ADMIN || 0}</td>
-                    </tr>
-                    <tr>
-                      <td>Users by Role - Elder</td>
-                      <td>{reportData.userStats.byRole.ELDER || 0}</td>
-                    </tr>
-                    <tr>
-                      <td>Users by Role - User</td>
-                      <td>{reportData.userStats.byRole.USER || 0}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Summary Section for General System Report */}
+            {reportType === 'GENERAL_SYSTEM' && reportData.summary && (
+              <div className={styles.summarySection}>
+                <h4>System Statistics</h4>
+                <div className={styles.statsGrid}>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Users:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalUsers}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Wisdom Entries:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalWisdoms}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Comments:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalComments}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Likes:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalLikes}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>New Users (30 days):</span>
+                    <span className={styles.statValue}>{reportData.summary.newUsersCount}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>New Wisdom (30 days):</span>
+                    <span className={styles.statValue}>{reportData.summary.recentWisdomsCount}</span>
+                  </div>
+                </div>
+                <h4 style={{marginTop: '20px'}}>Recent Activity (Last 30 Days)</h4>
               </div>
+            )}
 
-              {/* Wisdom Statistics */}
-              <div className={styles.reportSection}>
-                <h3 className={styles.reportSectionTitle}>
-                  <BookOpen size={20} />
-                  Wisdom Statistics
-                </h3>
-                <table className={styles.reportTable}>
-                  <thead>
-                    <tr>
-                      <th>Metric</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Total Wisdom Entries</td>
-                      <td>{reportData.wisdomStats.total}</td>
-                    </tr>
-                    <tr>
-                      <td>New Wisdom (Period)</td>
-                      <td>{reportData.wisdomStats.newWisdoms}</td>
-                    </tr>
-                    <tr>
-                      <td>Published Wisdom</td>
-                      <td>{reportData.wisdomStats.published}</td>
-                    </tr>
-                    <tr>
-                      <td>Featured Wisdom</td>
-                      <td>{reportData.wisdomStats.featured}</td>
-                    </tr>
-                    <tr>
-                      <td>Total Views</td>
-                      <td>{reportData.wisdomStats.totalViews}</td>
-                    </tr>
-                    <tr>
-                      <td>Average Views per Wisdom</td>
-                      <td>{reportData.wisdomStats.avgViews}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Summary Section for User-Specific Report */}
+            {reportType === 'USER_SPECIFIC' && reportData.summary && (
+              <div className={styles.summarySection}>
+                <h4>User Summary</h4>
+                <div className={styles.statsGrid}>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Wisdom Entries:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalWisdoms}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Views:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalViews}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Likes:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalLikes}</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statLabel}>Total Comments:</span>
+                    <span className={styles.statValue}>{reportData.summary.totalComments}</span>
+                  </div>
+                </div>
               </div>
+            )}
 
-              {/* Category Distribution */}
-              <div className={styles.reportSection}>
-                <h3 className={styles.reportSectionTitle}>
-                  <Award size={20} />
-                  Category Distribution
-                </h3>
-                <table className={styles.reportTable}>
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Count</th>
-                      <th>Percentage</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reportData.categoryStats.map((cat) => (
-                      <tr key={cat.category}>
-                        <td>{formatCategory(cat.category)}</td>
-                        <td>{cat.count}</td>
-                        <td>{cat.percentage}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Top Wisdom */}
-              <div className={styles.reportSection}>
-                <h3 className={styles.reportSectionTitle}>
-                  <Award size={20} />
-                  Top 10 Most Popular Wisdom
-                </h3>
-                <table className={styles.reportTable}>
-                  <thead>
-                    <tr>
-                      <th>#</th>
+            {/* Table */}
+            <table className={styles.reportTable}>
+              <thead>
+                <tr>
+                  {reportType === 'GENERAL_SYSTEM' && (
+                    <>
+                      <th>Type</th>
+                      <th>Name/Title</th>
+                      <th>Email/Category</th>
+                      <th>Role/Domain</th>
+                      <th>Date</th>
+                      <th>Details</th>
+                    </>
+                  )}
+                  {reportType === 'USER_SPECIFIC' && (
+                    <>
                       <th>Title</th>
+                      <th>Category</th>
                       <th>Views</th>
                       <th>Likes</th>
                       <th>Comments</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reportData.topWisdoms.map((wisdom, index) => (
-                      <tr key={wisdom.id}>
-                        <td>{index + 1}</td>
-                        <td>{wisdom.title}</td>
-                        <td>{wisdom.views}</td>
-                        <td>{wisdom.likesCount}</td>
-                        <td>{wisdom.commentsCount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Engagement Statistics */}
-              <div className={styles.reportSection}>
-                <h3 className={styles.reportSectionTitle}>
-                  <MessageCircle size={20} />
-                  Engagement Statistics
-                </h3>
-                <table className={styles.reportTable}>
-                  <thead>
-                    <tr>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </>
+                  )}
+                  {reportType === 'WISDOM_ENTRIES' && (
+                    <>
+                      <th>Citizen Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th style={{textAlign: 'center'}}>Wisdom Entries Added</th>
+                    </>
+                  )}
+                  {reportType === 'SUGGESTIONS_ACTIVITY' && (
+                    <>
+                      <th>Citizen</th>
+                      <th>Suggestion Title</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </>
+                  )}
+                  {reportType === 'SYSTEM_OVERVIEW' && (
+                    <>
                       <th>Metric</th>
                       <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Total Comments</td>
-                      <td>{reportData.engagementStats.totalComments}</td>
-                    </tr>
-                    <tr>
-                      <td>New Comments (Period)</td>
-                      <td>{reportData.engagementStats.newComments}</td>
-                    </tr>
-                    <tr>
-                      <td>Total Likes</td>
-                      <td>{reportData.engagementStats.totalLikes}</td>
-                    </tr>
-                    <tr>
-                      <td>New Likes (Period)</td>
-                      <td>{reportData.engagementStats.newLikes}</td>
-                    </tr>
-                    <tr>
-                      <td>Total Bookmarks</td>
-                      <td>{reportData.engagementStats.totalBookmarks}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {reportData.items?.map((item, index) => (
+                  <tr key={index}>
+                    {reportType === 'GENERAL_SYSTEM' && (
+                      <>
+                        <td>{item.type}</td>
+                        <td>{item.name}</td>
+                        <td>{item.email}</td>
+                        <td>{item.role}</td>
+                        <td>{item.date}</td>
+                        <td>{item.details}</td>
+                      </>
+                    )}
+                    {reportType === 'USER_SPECIFIC' && (
+                      <>
+                        <td>{item.title}</td>
+                        <td>{item.category}</td>
+                        <td style={{textAlign: 'center'}}>{item.views}</td>
+                        <td style={{textAlign: 'center'}}>{item.likes}</td>
+                        <td style={{textAlign: 'center'}}>{item.comments}</td>
+                        <td>{item.date}</td>
+                        <td>{item.status}</td>
+                      </>
+                    )}
+                    {reportType === 'WISDOM_ENTRIES' && (
+                      <>
+                        <td>{item.user}</td>
+                        <td>{item.email}</td>
+                        <td>{item.role === 'USER' ? 'Citizen' : item.role}</td>
+                        <td style={{textAlign: 'center', fontWeight: 'bold'}}>{item.count}</td>
+                      </>
+                    )}
+                    {reportType === 'SUGGESTIONS_ACTIVITY' && (
+                      <>
+                        <td>{item.user}</td>
+                        <td>{item.title}</td>
+                        <td>{item.status}</td>
+                        <td>{new Date(item.date).toLocaleDateString()}</td>
+                      </>
+                    )}
+                    {reportType === 'SYSTEM_OVERVIEW' && (
+                      <>
+                        <td>{item.metric}</td>
+                        <td>{item.value}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-              {/* Report Footer */}
-              <div className={styles.reportFooter}>
-                <p>This report was automatically generated by the Wisdom Management System</p>
-                <p>© {new Date().getFullYear()} Umurage Wubwenge. All rights reserved.</p>
+            {/* Admin Only Notice */}
+            <div className={styles.adminNotice}>
+              <p>This report is for admin only.</p>
+            </div>
+
+            {/* Footer with Metadata */}
+            <div className={styles.reportFooter}>
+              <div className={styles.footerInfo}>
+                <div className={styles.footerRow}>
+                  <div className={styles.footerLeft}>
+                    <div className={styles.footerItem}>
+                      <span className={styles.footerLabel}>System Administrator</span>
+                    </div>
+                    <div className={styles.footerItem}>
+                      <span className={styles.footerLabel}>Wisdom Management System</span>
+                    </div>
+                    <div className={styles.footerItem}>
+                      <span className={styles.footerLabel}>Date: {new Date().toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className={styles.footerRight}>
+                    <div className={styles.footerItem}>
+                      <span className={styles.footerValue}>Musengimana Fabrice</span>
+                    </div>
+                    <div className={styles.footerItem}>
+                      <span className={styles.footerValue}>Wisdom Preservation</span>
+                    </div>
+                    <div className={styles.footerItem}>
+                      <span className={styles.footerValue}>Signature: _______________</span>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.copyright}>
+                  ©2025 Umurage Wubwenge. All rights reserved
+                </div>
               </div>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+
+          <button 
+            onClick={handlePrint} 
+            className={`${styles.fab} print:hidden`}
+            title="Print Report"
+          >
+            <Printer size={24} />
+          </button>
+        </div>
+      )}
     </div>
   );
-}
-
-// Summary Card Component
-function SummaryCard({ icon: Icon, label, value, color }) {
-  return (
-    <div className={styles.summaryCard}>
-      <div className={styles.summaryIcon} style={{ color }}>
-        <Icon size={24} />
-      </div>
-      <div>
-        <p className={styles.summaryValue}>{value}</p>
-        <p className={styles.summaryLabel}>{label}</p>
-      </div>
-    </div>
-  );
-}
-
-// Helper function
-function formatCategory(category) {
-  return category.split('_').map(word => 
-    word.charAt(0) + word.slice(1).toLowerCase()
-  ).join(' ');
 }

@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Heart, MessageCircle, Eye, Calendar, User, Tag, 
-  ArrowLeft, Loader2, Send, Bookmark, Share2 
+  ArrowLeft, Loader2, Send, Bookmark, Share2, FileText, Download, Trash2 
 } from 'lucide-react';
-import styles from './WisdomDetail.module.css';
+import ShareModal from '@/components/ShareModal'; // Import the ShareModal component
+import styles from './WisdomDetail.module.css'; // Assuming you have this CSS module
 
 export default function WisdomDetailPage({ params }) {
   const { data: session } = useSession();
@@ -26,6 +27,9 @@ export default function WisdomDetailPage({ params }) {
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false); // State for ShareModal
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (wisdomId) {
@@ -127,6 +131,38 @@ export default function WisdomDetailPage({ params }) {
     }
   };
 
+  const handleShareClick = () => {
+    setIsShareModalOpen(true);
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!session || (session.user.role !== 'ELDER' && session.user.role !== 'ADMIN')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      const response = await fetch(`/api/wisdom/${wisdomId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        router.push('/wisdom');
+      } else {
+        console.error('Failed to delete wisdom');
+      }
+    } catch (error) {
+      console.error('Error deleting wisdom:', error);
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const formatCategory = (category) => {
     return category.split('_').map(word => 
       word.charAt(0) + word.slice(1).toLowerCase()
@@ -208,10 +244,6 @@ export default function WisdomDetailPage({ params }) {
 
           {/* Content */}
           <div className={styles.content}>
-            <div className={styles.prose}>
-              <p>{wisdom.content}</p>
-            </div>
-
             {/* Audio Player */}
             {wisdom.audioUrl && (
               <div className={styles.audioPlayer}>
@@ -232,6 +264,32 @@ export default function WisdomDetailPage({ params }) {
                 />
               </div>
             )}
+
+            {/* Document */}
+            {wisdom.documentUrl && (
+              <div className={styles.documentContainer}>
+                <div className={styles.documentCard}>
+                  <FileText className={styles.documentIcon} />
+                  <div className={styles.documentInfo}>
+                    <h4 className={styles.documentTitle}>Supporting Document</h4>
+                    <p className={styles.documentName}>{wisdom.documentUrl}</p>
+                  </div>
+                  <a 
+                    href={`/api/wisdom/${wisdomId}/download`} 
+                    className={styles.downloadButton}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download size={16} />
+                    <span>Download</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            <div className={styles.prose}>
+              <p>{wisdom.content}</p>
+            </div>
 
             {/* Tags */}
             {wisdom.tags && wisdom.tags.length > 0 && (
@@ -266,6 +324,18 @@ export default function WisdomDetailPage({ params }) {
             </div>
 
             <div className={styles.actionsRight}>
+              {/* Delete Button - Only for Elders/Admins who own the wisdom */}
+              {session && (session.user.role === 'ELDER' || session.user.role === 'ADMIN') && 
+               wisdom.authorId === session.user.id && (
+                <button
+                  onClick={handleDeleteClick}
+                  className={styles.deleteButton}
+                  title="Delete Wisdom"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+
               {/* Bookmark Button */}
               <button
                 onClick={handleBookmark}
@@ -275,10 +345,11 @@ export default function WisdomDetailPage({ params }) {
                 <Bookmark className={styles.bookmarkIcon} />
               </button>
 
-              {/* Share Button */}
+              {/* Share Button (Triggers Modal) */}
               <button
                 className={styles.iconButton}
                 title="Share"
+                onClick={handleShareClick}
               >
                 <Share2 className={styles.shareIcon} />
               </button>
@@ -358,6 +429,54 @@ export default function WisdomDetailPage({ params }) {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {wisdom && (
+        <ShareModal 
+          isOpen={isShareModalOpen} 
+          onClose={() => setIsShareModalOpen(false)} 
+          title={wisdom.title} 
+          url={typeof window !== 'undefined' ? window.location.href : ''} 
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.deleteModal}>
+            <h3 className={styles.deleteModalTitle}>Delete Wisdom</h3>
+            <p className={styles.deleteModalText}>
+              Are you sure you want to delete this wisdom? This action cannot be undone.
+            </p>
+            <div className={styles.deleteModalActions}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className={styles.cancelButton}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className={styles.confirmDeleteButton}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className={styles.deleteSpinner} />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

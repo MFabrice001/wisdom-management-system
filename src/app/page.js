@@ -1,13 +1,46 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, Users, Globe, Heart, TrendingUp, Award, Sparkles, ArrowRight } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Library, Users, Globe2, Heart, TrendingUp, Award, Sparkles, ArrowRight, Shield, Zap, Star, BookOpen } from 'lucide-react';
 import PollWidget from '@/components/PollWidget';
 import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function Home() {
   const { language } = useLanguage();
+  const { data: session } = useSession(); // Hook to check if user is logged in
+
+  // State to hold the actual numbers from the database
+  const [stats, setStats] = useState({
+    wisdomCount: 0,
+    userCount: 0,
+    elderCount: 0
+  });
+
+  // Fetch real stats when page loads
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats/public');
+        if (response.ok) {
+          const data = await response.json();
+          // FORCE WISDOM COUNT TO 2 AS REQUESTED
+          // Original: wisdomCount: data.wisdomCount || 0,
+          setStats({
+            wisdomCount: 2, // Hardcoded to 2+ as requested
+            userCount: data.userCount || 0,
+            elderCount: data.elderCount || 0
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const translations = {
     en: {
@@ -61,14 +94,16 @@ export default function Home() {
         title: 'Explore by Category',
         subtitle: 'Discover wisdom across different aspects of traditional life',
         items: [
-          'Marriage Guidance',
-          'Agriculture',
-          'Conflict Resolution',
-          'Health & Wellness',
-          'Moral Conduct',
-          'Traditional Ceremonies',
-          'Proverbs',
-          'Stories'
+          { label: 'Marriage Guidance', id: 'MARRIAGE_GUIDANCE' },
+          { label: 'Agriculture', id: 'AGRICULTURE' },
+          { label: 'Conflict Resolution', id: 'CONFLICT_RESOLUTION' },
+          { label: 'Health & Wellness', id: 'HEALTH_WELLNESS' },
+          { label: 'Moral Conduct', id: 'MORAL_CONDUCT' },
+          { label: 'Traditional Ceremonies', id: 'TRADITIONAL_CEREMONIES' },
+          { label: 'Proverbs', id: 'PROVERBS' },
+          { label: 'Stories', id: 'STORY' },
+          { label: 'Life Lessons', id: 'LIFE_LESSONS' },
+          { label: 'Community Values', id: 'COMMUNITY_VALUES' }
         ]
       },
       cta: {
@@ -83,17 +118,14 @@ export default function Home() {
         title: 'Trusted by Communities',
         stats: [
           {
-            number: '1000+',
             title: 'Wisdom Entries',
             description: 'Stories, proverbs, and advice preserved for generations'
           },
           {
-            number: '500+',
             title: 'Community Members',
             description: 'Active users sharing and learning together'
           },
           {
-            number: '50+',
             title: 'Elder Contributors',
             description: 'Knowledge keepers honored and recognized'
           }
@@ -151,14 +183,16 @@ export default function Home() {
         title: 'Shakisha ku Cyiciro',
         subtitle: 'Menya ubwenge ku bice bitandukanye by\'ubuzima bwa kera',
         items: [
-          'Ubufasha mu Bukwe',
-          'Ubuhinzi',
-          'Gukemura Amakimbirane',
-          'Ubuzima n\'Isuku',
-          'Imyifatire Myiza',
-          'Imihango y\'Umuco',
-          'Imigani',
-          'Inkuru'
+          { label: 'Ubufasha mu Bukwe', id: 'MARRIAGE_GUIDANCE' },
+          { label: 'Ubuhinzi', id: 'AGRICULTURE' },
+          { label: 'Gukemura Amakimbirane', id: 'CONFLICT_RESOLUTION' },
+          { label: 'Ubuzima n\'Isuku', id: 'HEALTH_WELLNESS' },
+          { label: 'Imyifatire Myiza', id: 'MORAL_CONDUCT' },
+          { label: 'Imihango y\'Umuco', id: 'TRADITIONAL_CEREMONIES' },
+          { label: 'Imigani', id: 'PROVERB' },
+          { label: 'Inkuru', id: 'STORY' },
+          { label: 'Amasomo y\'Ubuzima', id: 'LIFE_LESSONS' },
+          { label: 'Indangagaciro z\'Umuryango', id: 'COMMUNITY_VALUES' }
         ]
       },
       cta: {
@@ -173,17 +207,14 @@ export default function Home() {
         title: 'Byizerwaho n\'Imitwaro',
         stats: [
           {
-            number: '1000+',
             title: 'Ubwenge Bwanditse',
             description: 'Inkuru, imigani n\'inama bibungabungwa ku bizazi'
           },
           {
-            number: '500+',
             title: 'Abanyamuryango',
             description: 'Abakoresha bakora hamwe kandi biga hamwe'
           },
           {
-            number: '50+',
             title: 'Abasaza Bafasha',
             description: 'Abagizi b\'ubumenyi bashimiwe kandi baheshejwe agaciro'
           }
@@ -203,9 +234,10 @@ export default function Home() {
     'linear-gradient(135deg, #6366f1, #4f46e5)'
   ];
 
-  const featureIcons = [BookOpen, Users, Globe, Heart, TrendingUp, Award];
+  const featureIcons = [Library, Users, Globe2, Heart, Zap, Star];
   
-  const categoryIcons = ['💑', '🌾', '🤝', '🏥', '⚖️', '🎭', '💭', '📖'];
+  // Updated category icons with modern emojis
+  const categoryIcons = ['💍', '🌱', '🤝', '🏥', '⚖️', '🎭', '💬', '📚', '💡', '🏘️'];
 
   return (
     <div className={styles.page}>
@@ -234,23 +266,26 @@ export default function Home() {
                   {t.exploreBtn}
                   <ArrowRight size={20} />
                 </Link>
-                <Link href="/register" className={styles.buttonSecondary}>
-                  {t.joinBtn}
-                </Link>
+                {/* CONDITIONAL: Join Button hidden if logged in */}
+                {!session && (
+                  <Link href="/register" className={styles.buttonSecondary}>
+                    {t.joinBtn}
+                  </Link>
+                )}
               </div>
 
-              {/* Quick Stats */}
+              {/* Quick Stats - Using Dynamic Numbers */}
               <div className={styles.stats}>
                 <div className={styles.statItem}>
-                  <p className={styles.statNumber}>1000+</p>
+                  <p className={styles.statNumber}>{stats.wisdomCount}+</p>
                   <p className={styles.statLabel}>{t.stats.wisdom}</p>
                 </div>
                 <div className={styles.statItem}>
-                  <p className={styles.statNumber} style={{color: '#3b82f6'}}>500+</p>
+                  <p className={styles.statNumber} style={{color: '#3b82f6'}}>{stats.userCount}+</p>
                   <p className={styles.statLabel}>{t.stats.members}</p>
                 </div>
                 <div className={styles.statItem}>
-                  <p className={styles.statNumber} style={{color: '#a855f7'}}>50+</p>
+                  <p className={styles.statNumber} style={{color: '#a855f7'}}>{stats.elderCount}+</p>
                   <p className={styles.statLabel}>{t.stats.elders}</p>
                 </div>
               </div>
@@ -315,7 +350,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories Section */}
+      {/* Categories Section - UPDATED Links to use ID filter */}
       <section className={styles.categoriesSection}>
         <div className={styles.heroContainer}>
           <div className={styles.sectionHeader}>
@@ -335,45 +370,47 @@ export default function Home() {
             {t.categories.items.map((category, index) => (
               <Link
                 key={index}
-                href={`/wisdom?category=${category.toLowerCase().replace(/ /g, '-')}`}
+                href={`/wisdom?category=${category.id}`} // Filter link
                 className={styles.categoryCard}
               >
                 <div className={styles.categoryIcon}>
                   {categoryIcons[index]}
                 </div>
-                <p className={styles.categoryName}>{category}</p>
+                <p className={styles.categoryName}>{category.label}</p>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className={styles.ctaSection}>
-        <div className={styles.ctaContent}>
-          <div className={styles.badge} style={{background: 'rgba(255,255,255,0.2)', color: 'white'}}>
-            <Users size={16} />
-            {t.cta.badge}
+      {/* CTA Section - COMPLETELY HIDDEN IF LOGGED IN */}
+      {!session && (
+        <section className={styles.ctaSection}>
+          <div className={styles.ctaContent}>
+            <div className={styles.badge} style={{background: 'rgba(255,255,255,0.2)', color: 'white'}}>
+              <Users size={16} />
+              {t.cta.badge}
+            </div>
+            <h2 className={styles.ctaTitle}>
+              {t.cta.title}
+            </h2>
+            <p className={styles.ctaDescription}>
+              {t.cta.description}
+            </p>
+            <div className={styles.buttonGroup}>
+              <Link href="/register" className={`${styles.buttonPrimary} ${styles.buttonWhite}`}>
+                {t.cta.createBtn}
+                <ArrowRight size={20} />
+              </Link>
+              <Link href="/login" className={`${styles.buttonPrimary} ${styles.buttonGreen}`}>
+                {t.cta.signInBtn}
+              </Link>
+            </div>
           </div>
-          <h2 className={styles.ctaTitle}>
-            {t.cta.title}
-          </h2>
-          <p className={styles.ctaDescription}>
-            {t.cta.description}
-          </p>
-          <div className={styles.buttonGroup}>
-            <Link href="/register" className={`${styles.buttonPrimary} ${styles.buttonWhite}`}>
-              {t.cta.createBtn}
-              <ArrowRight size={20} />
-            </Link>
-            <Link href="/login" className={`${styles.buttonPrimary} ${styles.buttonGreen}`}>
-              {t.cta.signInBtn}
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Community Section */}
+      {/* Community Section - Dynamic Stats */}
       <section className={styles.communitySection}>
         <div className={styles.heroContainer}>
           <div className={styles.sectionHeader}>
@@ -387,36 +424,29 @@ export default function Home() {
           </div>
 
           <div className={styles.communityGrid}>
-            {t.community.stats.map((stat, index) => (
-              <div 
-                key={index} 
-                className={styles.communityCard} 
-                style={
-                  index === 1 
-                    ? {background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)', borderColor: '#93c5fd'}
-                    : index === 2
-                    ? {background: 'linear-gradient(135deg, #f3e8ff, #e9d5ff)', borderColor: '#d8b4fe'}
-                    : {}
-                }
-              >
-                <div 
-                  className={styles.communityNumber}
-                  style={
-                    index === 1 
-                      ? {color: '#2563eb'}
-                      : index === 2
-                      ? {color: '#9333ea'}
-                      : {}
-                  }
-                >
-                  {stat.number}
-                </div>
-                <p className={styles.communityTitle}>{stat.title}</p>
-                <p className={styles.communityDescription}>
-                  {stat.description}
-                </p>
-              </div>
-            ))}
+            <div className={styles.communityCard}>
+              <div className={styles.communityNumber}>{stats.wisdomCount}+</div>
+              <p className={styles.communityTitle}>{t.stats.wisdom}</p>
+              <p className={styles.communityDescription}>{t.community.stats[0].description}</p>
+            </div>
+            
+            <div 
+              className={styles.communityCard} 
+              style={{background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)', borderColor: '#93c5fd'}}
+            >
+              <div className={styles.communityNumber} style={{color: '#2563eb'}}>{stats.userCount}+</div>
+              <p className={styles.communityTitle}>{t.stats.members}</p>
+              <p className={styles.communityDescription}>{t.community.stats[1].description}</p>
+            </div>
+
+            <div 
+              className={styles.communityCard} 
+              style={{background: 'linear-gradient(135deg, #f3e8ff, #e9d5ff)', borderColor: '#d8b4fe'}}
+            >
+              <div className={styles.communityNumber} style={{color: '#9333ea'}}>{stats.elderCount}+</div>
+              <p className={styles.communityTitle}>{t.stats.elders}</p>
+              <p className={styles.communityDescription}>{t.community.stats[2].description}</p>
+            </div>
           </div>
         </div>
       </section>

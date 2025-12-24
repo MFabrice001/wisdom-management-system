@@ -1,22 +1,61 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, BookOpen, MapPin, Fingerprint, Loader2 } from 'lucide-react';
 import styles from './page.module.css';
 
-export default function RegisterPage() {
+// Wrapper for Suspense (Required for useSearchParams)
+export default function RegisterPageWrapper() {
+  return (
+    <Suspense fallback={<div className={styles.loading}>Loading...</div>}>
+      <RegisterPageContent />
+    </Suspense>
+  );
+}
+
+function RegisterPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get role from URL (default to USER/Citizen)
+  const roleParam = searchParams.get('role');
+  const initialRole = roleParam === 'ELDER' ? 'ELDER' : 'USER';
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
+    role: initialRole,
+    nationalId: '', // New field for Elder
+    residence: ''   // New field for Elder
   });
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Clear sensitive data on mount to prevent browser autofill persistence
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      email: '',
+      password: '',
+      confirmPassword: '',
+      nationalId: '',
+      // We keep the role from the URL if present
+    }));
+  }, []);
+
+  useEffect(() => {
+    if (roleParam === 'ELDER') {
+      setFormData(prev => ({ ...prev, role: 'ELDER' }));
+    } else {
+      setFormData(prev => ({ ...prev, role: 'USER' }));
+    }
+  }, [roleParam]);
 
   const handleChange = (e) => {
     setFormData({
@@ -31,21 +70,48 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
 
-    // Validation
+    // Basic Validation
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('All fields are required');
+      setError('All basic fields are required');
       setLoading(false);
       return;
+    }
+
+    // Elder Specific Validation
+    if (formData.role === 'ELDER') {
+        if (!formData.nationalId || !formData.residence) {
+            setError('National ID and Residence are required for Elder registration');
+            setLoading(false);
+            return;
+        }
+        // Basic Rwandan ID format check (16 digits)
+        if (!/^\d{16}$/.test(formData.nationalId)) {
+            setError('Please enter a valid 16-digit Rwandan National ID');
+            setLoading(false);
+            return;
+        }
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
+      // Security: Clear passwords on mismatch
+      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    // Password Validation: At least 6 chars, 1 Capital, 1 Number
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 6 characters and contain a capital letter & number');
+      setLoading(false);
+      // Security: Clear passwords on weak password error
+      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+      return;
+    }
+
+    if (!formData.email.endsWith('@gmail.com')) {
+      setError('Please use a valid @gmail.com address');
       setLoading(false);
       return;
     }
@@ -60,44 +126,65 @@ export default function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          role: formData.role,
+          nationalId: formData.role === 'ELDER' ? formData.nationalId : undefined,
+          residence: formData.role === 'ELDER' ? formData.residence : undefined,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        throw new Error(data.message || 'Registration failed');
       }
 
       setSuccess(true);
       
-      // Redirect to login after 2 seconds
+      // Security: Clear all form data on success
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        nationalId: '',
+        residence: '',
+        role: formData.role
+      });
+      
       setTimeout(() => {
         router.push('/login');
       }, 2000);
 
     } catch (error) {
       setError(error.message);
+      // Security: Clear passwords on API error
+      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
     } finally {
       setLoading(false);
     }
   };
+
+  const isElder = formData.role === 'ELDER';
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
         {/* Header */}
         <div className={styles.header}>
-          <div className={styles.logoWrapper}>
-            <UserPlus size={32} color="white" />
+          <div className={`${styles.logoWrapper} ${isElder ? styles.logoWrapperElder : ''}`}>
+            {isElder ? <BookOpen size={32} color="white" /> : <UserPlus size={32} color="white" />}
           </div>
-          <h2 className={styles.title}>Create Account</h2>
-          <p className={styles.subtitle}>Join the Umurage Wubwenge community</p>
+          <h2 className={styles.title}>
+            {isElder ? 'Elder Application' : 'Create Account'}
+          </h2>
+          <p className={styles.subtitle}>
+            {isElder 
+              ? 'Join as a guardian of our community wisdom' 
+              : 'Join the Umurage Wubwenge community'}
+          </p>
         </div>
 
-        {/* Form Card */}
         <div className={styles.card}>
-          {/* Success Message */}
           {success && (
             <div className={styles.success}>
               <CheckCircle className={styles.successIcon} size={20} />
@@ -108,7 +195,6 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
             <div className={styles.error}>
               <AlertCircle className={styles.errorIcon} size={20} />
@@ -116,12 +202,10 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            {/* Name Field */}
+          {/* Form with autoComplete="off" */}
+          <form onSubmit={handleSubmit} className={styles.form} autoComplete="off">
             <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>
-                Full Name
-              </label>
+              <label htmlFor="name" className={styles.label}>Full Name</label>
               <div className={styles.inputWrapper}>
                 <User className={styles.inputIcon} size={20} />
                 <input
@@ -133,15 +217,13 @@ export default function RegisterPage() {
                   className={styles.input}
                   placeholder="John Doe"
                   disabled={loading || success}
+                  autoComplete="off"
                 />
               </div>
             </div>
 
-            {/* Email Field */}
             <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>
-                Email Address
-              </label>
+              <label htmlFor="email" className={styles.label}>Email Address</label>
               <div className={styles.inputWrapper}>
                 <Mail className={styles.inputIcon} size={20} />
                 <input
@@ -151,17 +233,57 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   className={styles.input}
-                  placeholder="john@example.com"
+                  placeholder="john@gmail.com"
                   disabled={loading || success}
+                  autoComplete="off"
                 />
               </div>
             </div>
 
-            {/* Password Field */}
+            {/* Elder Specific Fields */}
+            {isElder && (
+                <>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="nationalId" className={styles.label}>National ID (NID)</label>
+                        <div className={styles.inputWrapper}>
+                            <Fingerprint className={styles.inputIcon} size={20} />
+                            <input
+                            id="nationalId"
+                            name="nationalId"
+                            type="text"
+                            value={formData.nationalId}
+                            onChange={handleChange}
+                            className={styles.input}
+                            placeholder="1 19XX 8 XXXXXXXX"
+                            maxLength={16}
+                            disabled={loading || success}
+                            autoComplete="off"
+                            />
+                        </div>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label htmlFor="residence" className={styles.label}>Residence (District, Sector)</label>
+                        <div className={styles.inputWrapper}>
+                            <MapPin className={styles.inputIcon} size={20} />
+                            <input
+                            id="residence"
+                            name="residence"
+                            type="text"
+                            value={formData.residence}
+                            onChange={handleChange}
+                            className={styles.input}
+                            placeholder="e.g., Gasabo, Kacyiru"
+                            disabled={loading || success}
+                            autoComplete="off"
+                            />
+                        </div>
+                    </div>
+                </>
+            )}
+
             <div className={styles.formGroup}>
-              <label htmlFor="password" className={styles.label}>
-                Password
-              </label>
+              <label htmlFor="password" className={styles.label}>Password</label>
               <div className={styles.inputWrapper}>
                 <Lock className={styles.inputIcon} size={20} />
                 <input
@@ -173,16 +295,14 @@ export default function RegisterPage() {
                   className={styles.input}
                   placeholder="••••••••"
                   disabled={loading || success}
+                  autoComplete="new-password" // Prevents autofill of old passwords
                 />
               </div>
-              <p className={styles.helpText}>Must be at least 6 characters</p>
+              <p className={styles.helpText}>Must contain at least 1 capital letter & 1 number</p>
             </div>
 
-            {/* Confirm Password Field */}
             <div className={styles.formGroup}>
-              <label htmlFor="confirmPassword" className={styles.label}>
-                Confirm Password
-              </label>
+              <label htmlFor="confirmPassword" className={styles.label}>Confirm Password</label>
               <div className={styles.inputWrapper}>
                 <Lock className={styles.inputIcon} size={20} />
                 <input
@@ -194,52 +314,37 @@ export default function RegisterPage() {
                   className={styles.input}
                   placeholder="••••••••"
                   disabled={loading || success}
+                  autoComplete="new-password" // Prevents autofill
                 />
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading || success}
-              className={styles.submitButton}
+              className={`${styles.submitButton} ${isElder ? styles.submitButtonElder : ''}`}
             >
               {loading ? (
                 <>
-                  <div className={styles.spinner}></div>
+                  <Loader2 className={styles.spinner} />
                   <span>Creating Account...</span>
                 </>
               ) : (
                 <>
-                  <UserPlus size={20} />
-                  <span>Create Account</span>
+                  {isElder ? <BookOpen size={20} /> : <UserPlus size={20} />}
+                  <span>{isElder ? 'Register as Elder' : 'Create Account'}</span>
                 </>
               )}
             </button>
           </form>
 
-          {/* Login Link */}
           <div className={styles.footer}>
             <p className={styles.footerText}>
               Already have an account?{' '}
-              <Link href="/login" className={styles.loginLink}>
-                Sign In
-              </Link>
+              <Link href="/login" className={styles.loginLink}>Sign In</Link>
             </p>
           </div>
         </div>
-
-        {/* Terms */}
-        <p className={styles.terms}>
-          By creating an account, you agree to our{' '}
-          <Link href="/terms" className={styles.termsLink}>
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link href="/privacy" className={styles.termsLink}>
-            Privacy Policy
-          </Link>
-        </p>
       </div>
     </div>
   );

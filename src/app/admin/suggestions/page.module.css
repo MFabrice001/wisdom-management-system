@@ -1,0 +1,304 @@
+.page {
+  min-height: 100vh;
+  background-color: #f9fafb; /* gray-50 */
+  padding: 3rem 1rem;
+}
+
+.container {
+  max-width: 64rem; /* max-w-4xl */
+  margin: 0 auto;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111827; /* gray-900 */
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.subtitle {
+  color: #6b7280; /* gray-600 */
+  font-size: 1.125rem;
+}
+
+/* Filter Controls */
+.filterControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: white;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db; /* gray-300 */
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.filterIcon {
+  color: #6b7280;
+}
+
+.filterSelect {
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: #374151; /* gray-700 */
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  padding-right: 1.5rem; /* Space for dropdown arrow */
+}
+
+/* Loading & Empty States */
+.loadingWrapper, .accessDenied, .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #6b7280;
+  min-height: 400px;
+}
+
+.spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #16a34a; /* green-600 */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.emptyIcon {
+  margin-bottom: 1rem;
+  color: #d1d5db; /* gray-300 */
+}
+
+/* Grid Layout */
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Suggestion Card */
+.card {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #f3f4f6; /* gray-100 */
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: #dbeafe; /* blue-100 */
+  color: #1e40af; /* blue-800 */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.userName {
+  font-weight: 600;
+  color: #1f2937; /* gray-800 */
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.date {
+  font-size: 0.875rem;
+  color: #9ca3af; /* gray-400 */
+  display: block;
+}
+
+/* Actions & Badges */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.statusBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  appearance: none; /* Hide default select arrow for cleaner look */
+  text-align: center;
+}
+
+.pending {
+  background-color: #fef3c7; /* yellow-100 */
+  color: #92400e; /* yellow-800 */
+}
+
+.reviewed {
+  background-color: #dcfce7; /* green-100 */
+  color: #166534; /* green-800 */
+}
+
+.awardButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.awardButton:hover:not(:disabled) {
+  background-color: #fef9c3; /* yellow-50 */
+  color: #ca8a04; /* yellow-600 */
+  border-color: #fde047;
+}
+
+.awardButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Content */
+.suggestionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.suggestionContent {
+  color: #4b5563; /* gray-600 */
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+/* Reply Section */
+.replySection {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 1rem;
+}
+
+.existingReply {
+  background-color: #f0fdf4; /* green-50 */
+  padding: 1rem;
+  border-left: 4px solid #16a34a; /* green-600 */
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.replyLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #166534; /* green-800 */
+  margin-bottom: 0.25rem;
+}
+
+.replyText {
+  color: #374151; /* gray-700 */
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.replyMeta {
+  font-size: 0.75rem;
+  color: #15803d; /* green-700 */
+}
+
+/* Reply Form */
+.replyForm {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.replyInput {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 3rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.replyInput:focus {
+  border-color: #16a34a; /* green-600 */
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.replyButton {
+  padding: 0.75rem;
+  background-color: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  height: auto;
+}
+
+.replyButton:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.replyButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.spinnerSmall {
+  width: 1.25rem;
+  height: 1.25rem;
+  animation: spin 1s linear infinite;
+}

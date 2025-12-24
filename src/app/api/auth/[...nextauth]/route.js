@@ -1,7 +1,6 @@
-// src/app/api/auth/[...nextauth]/route.js
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import prisma from '@/lib/prisma'; // ⭐ Use shared prisma instance
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 export const authOptions = {
@@ -17,7 +16,13 @@ export const authOptions = {
           throw new Error('Please enter email and password');
         }
 
-        // Find user by email
+        // 1. Standard Email Validation (Allowing any valid domain like @info.rw)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(credentials.email)) {
+          throw new Error('Please enter a valid email address.');
+        }
+
+        // 2. Find user by email
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email
@@ -28,7 +33,7 @@ export const authOptions = {
           throw new Error('No user found with this email');
         }
 
-        // Verify password
+        // 3. Verify password
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
@@ -38,7 +43,7 @@ export const authOptions = {
           throw new Error('Invalid password');
         }
 
-        // Return user object
+        // 4. Return user object
         return {
           id: user.id,
           email: user.email,

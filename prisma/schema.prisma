@@ -8,44 +8,78 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String       @id @default(cuid())
+  email        String       @unique
   password     String
   name         String
-  role         Role       @default(USER)
+  role         Role         @default(USER)
   profileImage String?
   bio          String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  bookmarks    Bookmark[]
-  comments     Comment[]
-  likes        Like[]
-  wisdoms      Wisdom[]
-  polls        Poll[]
-  votes        Vote[]
+  
+  // Fields for Elder Registration
+  nationalId   String?      @unique
+  residence    String?
+  isVerified   Boolean      @default(false)
+
+  // Fields for Password Reset (CRITICAL ADDITION)
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  bookmarks     Bookmark[]
+  comments      Comment[]
+  likes         Like[]
+  wisdoms       Wisdom[]
+  polls         Poll[]
+  votes         Vote[]
+  suggestions   Suggestion[] 
+  meetings      Meeting[]
+  
+  // Forum Relations
+  forumTopics   ForumTopic[]
+  forumReplies  ForumReply[]
+
+  // Messaging Relations
+  conversations Conversation[] @relation("UserConversations")
+  messages      Message[]
+
+  // Badges
+  awardedBadges AwardedBadge[]
+
+  // Quiz and Certificates
+  quizAttempts  QuizAttempt[]
+  certificates  Certificate[]
 
   @@map("users")
 }
 
+// ... (Rest of your models: Wisdom, Comment, Like, Bookmark, Poll, Vote, Suggestion, Meeting, ForumTopic, ForumReply, Conversation, Message, AwardedBadge, Enums - KEEP THEM AS IS)
+// For brevity in this response, I'm only showing the User update, but you should keep the rest of the file content intact.
+// If you need the full file again, refer to Turn 118, but with the User model updated as above.
+
 model Wisdom {
-  id          String     @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   content     String
   category    Category
-  language    Language   @default(KINYARWANDA)
+  language    Language  @default(KINYARWANDA)
   audioUrl    String?
   imageUrl    String?
+  documentUrl String?
   tags        String[]
-  views       Int        @default(0)
-  isPublished Boolean    @default(true)
-  isFeatured  Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  views       Int       @default(0)
+  isPublished Boolean   @default(true)
+  isFeatured  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   bookmarks   Bookmark[]
   comments    Comment[]
   likes       Like[]
-  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([category])
   @@index([language])
@@ -95,17 +129,17 @@ model Bookmark {
 }
 
 model Poll {
-  id          String   @id @default(cuid())
-  question    String
-  options     Json     // Array of {text: string, votes: number}
-  startDate   DateTime @default(now())
-  endDate     DateTime
-  isActive    Boolean  @default(true)
-  createdBy   String
-  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  votes       Vote[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  question  String
+  options   Json
+  startDate DateTime @default(now())
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  createdBy String
+  creator   User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  votes     Vote[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive, endDate])
   @@index([createdBy])
@@ -125,6 +159,136 @@ model Vote {
   @@index([pollId])
   @@index([userId])
   @@map("votes")
+}
+
+model Suggestion {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  status    String   @default("PENDING")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reply     String?
+  repliedBy String?
+  repliedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("suggestions")
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime
+  link        String
+  hostId      String
+  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([hostId])
+  @@index([date])
+  @@map("meetings")
+}
+
+model ForumTopic {
+  id        String       @id @default(cuid())
+  title     String
+  content   String
+  category  String       
+  views     Int          @default(0)
+  authorId  String
+  author    User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  replies   ForumReply[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([category])
+  @@index([authorId])
+  @@map("forum_topics")
+}
+
+model ForumReply {
+  id        String     @id @default(cuid())
+  content   String
+  topicId   String
+  topic     ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([topicId])
+  @@index([authorId])
+  @@map("forum_replies")
+}
+
+model Conversation {
+  id           String    @id @default(cuid())
+  participants User[]    @relation("UserConversations")
+  messages     Message[]
+  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  read           Boolean      @default(false)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model AwardedBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeType String   
+  awardedBy String   
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("awarded_badges")
+}
+
+model QuizAttempt {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score           Int
+  totalQuestions  Int
+  percentage      Float
+  tabSwitches     Int          @default(0)
+  violations      String[]     @default([])
+  isProctored     Boolean      @default(true)
+  certificate     Certificate?
+  createdAt       DateTime     @default(now())
+
+  @@index([userId])
+  @@map("quiz_attempts")
+}
+
+model Certificate {
+  id                String      @id @default(cuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizAttemptId     String      @unique
+  quizAttempt       QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+  certificateNumber String      @unique
+  issuedAt          DateTime    @default(now())
+
+  @@index([userId])
+  @@map("certificates")
 }
 
 enum Role {

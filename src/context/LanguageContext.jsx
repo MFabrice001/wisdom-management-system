@@ -1,11 +1,24 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState('en');
+
+  // Load saved language preference on mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferred-language');
+    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'rw')) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  // Save language preference when it changes
+  useEffect(() => {
+    localStorage.setItem('preferred-language', language);
+  }, [language]);
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'rw' : 'en');

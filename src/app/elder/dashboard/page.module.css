@@ -1,0 +1,143 @@
+.page {
+  min-height: 100vh;
+  background-color: #f9fafb; /* gray-50 */
+  padding: 3rem 1rem;
+}
+
+.container {
+  max-width: 72rem; /* max-w-6xl */
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827; /* gray-900 */
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #4b5563; /* gray-600 */
+  margin-bottom: 2rem;
+  font-size: 1rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s, transform 0.2s;
+  border-left-width: 4px;
+  display: block; /* For Link elements */
+  text-decoration: none;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.cardGreen { border-left-color: #22c55e; }
+.cardPurple { border-left-color: #9333ea; }
+.cardBlue { border-left-color: #3b82f6; }
+.cardYellow { border-left-color: #eab308; }
+
+.icon {
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+}
+
+.iconGreen { color: #16a34a; }
+.iconPurple { color: #9333ea; }
+.iconBlue { color: #2563eb; }
+.iconYellow { color: #ca8a04; }
+
+.cardTitle {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: 0.25rem;
+  color: #1f2937;
+}
+
+.cardText {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.activitySection {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  border: 1px solid #f3f4f6;
+}
+
+.chartSection {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  border: 1px solid #f3f4f6;
+  margin-bottom: 2rem;
+}
+
+.chartContainer {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chart {
+  min-width: 800px;
+}
+
+.chartBar {
+  transition: fill 0.2s;
+}
+
+.chartBar:hover {
+  fill: #1d4ed8;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.emptyState {
+  color: #6b7280;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+.accessDenied {
+  padding: 2rem;
+  text-align: center;
+  font-weight: 500;
+  color: #4b5563;
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

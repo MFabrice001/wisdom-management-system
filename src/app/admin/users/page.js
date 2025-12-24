@@ -2,34 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Users, Search, Shield, Trash2, Edit, Loader2, Mail, Calendar } from 'lucide-react';
+import { Users, Search, Award, Loader2, CheckCircle, AlertCircle, Edit } from 'lucide-react';
 import styles from './page.module.css';
 
-export default function AdminUsersPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+export default function ManageUsersPage() {
+  const { data: session } = useSession();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [awarding, setAwarding] = useState(null);
+  const [updatingRole, setUpdatingRole] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (session?.user?.role !== 'ADMIN') {
-      router.push('/');
-    } else {
-      fetchUsers();
+    if (session?.user?.role === 'ADMIN') {
+        fetchUsers();
     }
-  }, [status, session, router]);
+  }, [session]);
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
-      const response = await fetch('/api/admin/users');
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const data = await res.json();
         setUsers(data.users || []);
       }
     } catch (error) {
@@ -39,146 +33,189 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-
+  const handleAwardBadge = async (userId, badgeType) => {
+    if (!confirm(`Award "${badgeType}" badge to this citizen?`)) return;
+    
+    setAwarding(userId);
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
+      const res = await fetch('/api/admin/badges/award', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, badgeType }),
       });
 
-      if (response.ok) {
-        fetchUsers();
+      if (res.ok) {
+        alert('Badge awarded successfully!');
+        fetchUsers(); // Refresh to potentially show badge status if API returns it
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to award badge.');
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error(error);
+      alert('An error occurred.');
+    } finally {
+      setAwarding(null);
     }
   };
 
   const handleRoleChange = async (userId, newRole) => {
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
+    if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) return;
 
-      if (response.ok) {
-        fetchUsers();
-      }
+    setUpdatingRole(userId);
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/role`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: newRole }),
+        });
+
+        if (res.ok) {
+            alert('Role updated successfully!');
+            fetchUsers();
+        } else {
+            alert('Failed to update role.');
+        }
     } catch (error) {
-      console.error('Error updating user role:', error);
+        console.error('Error updating role:', error);
+    } finally {
+        setUpdatingRole(null);
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <Loader2 className={styles.spinner} size={48} />
-      </div>
-    );
+  const checkEligibility = (user) => {
+    if (user.role !== 'USER') return []; 
+
+    const badges = [];
+    
+    // Active Voice: 5+ Comments
+    if ((user._count?.comments || 0) >= 5) {
+        badges.push('Active Voice');
+    }
+    
+    // Community Pillar: 3+ Votes
+    if ((user._count?.votes || 0) >= 3) {
+        badges.push('Community Pillar');
+    }
+
+    // Wisdom Seeker: 5+ Bookmarks
+    if ((user._count?.bookmarks || 0) >= 5) {
+        badges.push('Wisdom Seeker');
+    }
+
+    return badges;
+  };
+
+  if (!session || session.user.role !== 'ADMIN') {
+      return <div className={styles.loadingWrapper}>Unauthorized Access</div>;
   }
+
+  if (loading) return <div className={styles.loadingWrapper}><Loader2 className={styles.spinner} /></div>;
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <div className={styles.headerTop}>
-          <Link href="/admin" className={styles.backButton}>
-            <ArrowLeft size={20} />
-            Back to Dashboard
-          </Link>
-        </div>
-
         <div className={styles.header}>
-          <div>
             <h1 className={styles.title}>
-              <Users size={32} style={{ display: 'inline', marginRight: '0.5rem' }} />
-              Manage Users
+            <Users className={styles.titleIcon} /> Manage Users
             </h1>
-            <p className={styles.subtitle}>View and manage user accounts ({users.length} total)</p>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className={styles.searchBar}>
-          <Search className={styles.searchIcon} size={20} />
-          <input
-            type="text"
-            placeholder="Search users by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-
-        {/* Users List */}
-        <div className={styles.usersList}>
-          {filteredUsers.length === 0 ? (
-            <div className={styles.empty}>
-              <Users size={64} className={styles.emptyIcon} />
-              <p>No users found</p>
+            <div className={styles.searchWrapper}>
+                <Search className={styles.searchIcon} size={20} />
+                <input 
+                    type="text" 
+                    placeholder="Search users..." 
+                    className={styles.searchInput}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
-          ) : (
-            filteredUsers.map((user) => (
-              <div key={user.id} className={styles.userCard}>
-                <div className={styles.userInfo}>
-                  <div className={styles.userAvatar}>
-                    {user.name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <div className={styles.userDetails}>
-                    <h3 className={styles.userName}>{user.name}</h3>
-                    <p className={styles.userEmail}>
-                      <Mail size={14} />
-                      {user.email}
-                    </p>
-                    <p className={styles.userDate}>
-                      <Calendar size={14} />
-                      Joined {new Date(user.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
+        </div>
 
-                <div className={styles.userStats}>
-                  <div className={styles.statBadge}>
-                    <span className={styles.statValue}>{user._count?.wisdoms || 0}</span>
-                    <span className={styles.statLabel}>Wisdom</span>
-                  </div>
-                  <div className={styles.statBadge}>
-                    <span className={styles.statValue}>{user._count?.comments || 0}</span>
-                    <span className={styles.statLabel}>Comments</span>
-                  </div>
-                </div>
-
-                <div className={styles.userActions}>
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className={styles.roleSelect}
-                    disabled={user.id === session?.user?.id}
-                  >
-                    <option value="USER">User</option>
-                    <option value="ELDER">Elder</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className={styles.deleteButton}
-                    disabled={user.id === session?.user?.id}
-                    title={user.id === session?.user?.id ? "You cannot delete yourself" : "Delete user"}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-            ))
+        <div className={styles.tableCard}>
+          <table className={styles.table}>
+            <thead className={styles.thead}>
+              <tr>
+                <th className={styles.th}>User</th>
+                <th className={styles.th}>Role</th>
+                <th className={styles.th}>Joined</th>
+                <th className={styles.th}>Badge Eligibility</th>
+                <th className={styles.th}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => {
+                const eligibleBadges = checkEligibility(user);
+                const isCitizen = user.role === 'USER';
+                
+                return (
+                    <tr key={user.id} className={styles.tr}>
+                    <td className={styles.td}>
+                        <div className={styles.userName}>{user.name}</div>
+                        <div className={styles.userEmail}>{user.email}</div>
+                    </td>
+                    <td className={styles.td}>
+                        <select 
+                            value={user.role} 
+                            onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                            disabled={updatingRole === user.id || user.id === session.user.id}
+                            className={`${styles.roleSelect} ${styles[user.role.toLowerCase()]}`}
+                        >
+                            <option value="USER">Citizen</option>
+                            <option value="ELDER">Elder</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                        {updatingRole === user.id && <Loader2 size={12} className="inline ml-2 animate-spin" />}
+                    </td>
+                    <td className={styles.tdText}>
+                        {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className={styles.td}>
+                        {eligibleBadges.length > 0 ? (
+                            <div className={styles.badgesList}>
+                                {eligibleBadges.map(b => (
+                                    <span key={b} className={styles.eligibleBadge}>
+                                        <CheckCircle size={12} /> {b}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <span className={styles.noEligibility}>
+                                {isCitizen ? 'No tasks completed' : 'N/A'}
+                            </span>
+                        )}
+                    </td>
+                    <td className={styles.tdActions}>
+                        {isCitizen && eligibleBadges.length > 0 ? (
+                             <div className={styles.actionGroup}>
+                                {eligibleBadges.map(badge => (
+                                    <button 
+                                        key={badge}
+                                        onClick={() => handleAwardBadge(user.id, badge)}
+                                        className={styles.awardButton}
+                                        disabled={awarding === user.id}
+                                        title={`Award ${badge}`}
+                                    >
+                                        {awarding === user.id ? <Loader2 size={12} className={styles.spinner} /> : <Award size={12} />}
+                                        Award {badge}
+                                    </button>
+                                ))}
+                             </div>
+                        ) : (
+                            <span className={styles.noActions}>-</span>
+                        )}
+                    </td>
+                    </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {filteredUsers.length === 0 && (
+              <div className={styles.emptyState}>No users found.</div>
           )}
         </div>
       </div>

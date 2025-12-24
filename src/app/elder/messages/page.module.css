@@ -1,0 +1,126 @@
+.page {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 3rem 1rem;
+}
+
+.container {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.badge {
+  background-color: #dbeafe;
+  color: #1e40af;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.conversationList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.conversationCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.conversationCard:hover {
+  transform: translateX(4px);
+  border-color: #9333ea; /* Purple for Elder focus */
+}
+
+.avatar {
+  width: 3rem;
+  height: 3rem;
+  background-color: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.conversationInfo {
+  flex: 1;
+}
+
+.participantName {
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.roleBadge {
+  font-size: 0.7rem;
+  background-color: #f3f4f6;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.lastMessage {
+  color: #6b7280;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.loadingWrapper, .accessDenied, .emptyState {
+  text-align: center;
+  padding: 4rem;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  color: #9333ea;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.emptyIcon {
+  margin: 0 auto 1rem;
+  color: #d1d5db;
+}
