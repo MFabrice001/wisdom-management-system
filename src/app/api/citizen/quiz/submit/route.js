@@ -10,7 +10,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { score, totalQuestions, percentage, tabSwitches = 0, violations = [], certificateEligible } = await request.json();
+    const { score, totalQuestions, percentage, tabSwitches = 0, violations = [], certificateEligible, timeSpentMinutes = 0 } = await request.json();
     
     const userId = session.user.id;
 
@@ -21,6 +21,7 @@ export async function POST(request) {
         score,
         totalQuestions,
         percentage,
+        timeSpentMinutes,
         tabSwitches,
         violations,
         isProctored: true

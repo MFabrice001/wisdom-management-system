@@ -26,10 +26,8 @@ export default function Home() {
         const response = await fetch('/api/stats/public');
         if (response.ok) {
           const data = await response.json();
-          // FORCE WISDOM COUNT TO 2 AS REQUESTED
-          // Original: wisdomCount: data.wisdomCount || 0,
           setStats({
-            wisdomCount: 2, // Hardcoded to 2+ as requested
+            wisdomCount: data.wisdomCount || 0,
             userCount: data.userCount || 0,
             elderCount: data.elderCount || 0
           });

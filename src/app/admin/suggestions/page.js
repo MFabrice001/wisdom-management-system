@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { MessageSquare, Check, X, Loader2, Send, Filter, Award, UserCheck } from 'lucide-react';
+import { MessageSquare, Check, X, Loader2, Send, Filter } from 'lucide-react';
 import Link from 'next/link';
 import styles from './page.module.css';
 
@@ -13,7 +13,6 @@ export default function AdminSuggestionsPage() {
   const [filter, setFilter] = useState('ALL');
   const [replyText, setReplyText] = useState({});
   const [sendingReply, setSendingReply] = useState(null);
-  const [awarding, setAwarding] = useState(null);
 
   useEffect(() => {
     if (session?.user?.role === 'ADMIN' || session?.user?.role === 'ELDER') {
@@ -78,30 +77,6 @@ export default function AdminSuggestionsPage() {
     }
   };
 
-  const handleAwardBadge = async (userId, badgeType) => {
-    if (!confirm(`Are you sure you want to award the "${badgeType}" badge to this citizen?`)) return;
-    
-    setAwarding(userId);
-    try {
-      const res = await fetch('/api/admin/badges/award', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, badgeType }),
-      });
-
-      if (res.ok) {
-        alert('Badge awarded successfully!');
-      } else {
-        const data = await res.json();
-        alert(data.message || 'Failed to award badge.');
-      }
-    } catch (error) {
-      console.error('Error awarding badge:', error);
-    } finally {
-      setAwarding(null);
-    }
-  };
-
   const filteredSuggestions = suggestions.filter(item => {
     if (filter === 'ALL') return true;
     return item.status === filter;
@@ -124,7 +99,7 @@ export default function AdminSuggestionsPage() {
         <div className={styles.header}>
           <div>
             <h1 className={styles.title}>Citizen Suggestions</h1>
-            <p className={styles.subtitle}>Review feedback and award contributors.</p>
+            <p className={styles.subtitle}>Review and respond to citizen feedback.</p>
           </div>
           
           <div className={styles.filterControls}>
@@ -162,16 +137,6 @@ export default function AdminSuggestionsPage() {
                       <h3 className={styles.userName}>{item.user?.name || 'Citizen'}</h3>
                       <span className={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</span>
                     </div>
-                    {/* Award Badge Button */}
-                    <button 
-                      onClick={() => handleAwardBadge(item.userId, 'Active Voice')}
-                      className={styles.awardButton}
-                      title="Award 'Active Voice' Badge"
-                      disabled={awarding === item.userId}
-                    >
-                      {awarding === item.userId ? <Loader2 size={14} className={styles.spinnerSmall} /> : <Award size={14} />}
-                      <span>Award Badge</span>
-                    </button>
                   </div>
                   <div className={styles.actions}>
                     <select 

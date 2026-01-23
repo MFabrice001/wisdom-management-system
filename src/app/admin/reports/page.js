@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Printer, BookOpen, MessageSquare, Activity, ArrowLeft, Users, FileText } from 'lucide-react';
+import { Printer, BookOpen, MessageSquare, Activity, ArrowLeft, Users, FileText, Calendar, X } from 'lucide-react';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function ReportsPage() {
+  const { language } = useLanguage();
   const [reportType, setReportType] = useState('GENERAL_SYSTEM');
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const categories = [
     { value: 'ALL', label: 'All Domains' },
@@ -55,6 +59,9 @@ export default function ReportsPage() {
         }
         url += `&userId=${selectedUser}&category=${selectedCategory}`;
       }
+      
+      if (startDate) url += `&startDate=${startDate}`;
+      if (endDate) url += `&endDate=${endDate}`;
       
       const res = await fetch(url);
       if (res.ok) {
@@ -118,6 +125,24 @@ export default function ReportsPage() {
               >
                 <FileText size={20} /> System Overview
               </button>
+              <button 
+                onClick={() => setReportType('QUIZ_ATTEMPTS')}
+                className={`${styles.typeButton} ${reportType === 'QUIZ_ATTEMPTS' ? styles.active : ''}`}
+              >
+                <FileText size={20} /> Quiz Attempts
+              </button>
+              <button 
+                onClick={() => setReportType('CERTIFICATES_BADGES')}
+                className={`${styles.typeButton} ${reportType === 'CERTIFICATES_BADGES' ? styles.active : ''}`}
+              >
+                <FileText size={20} /> Certificates & Badges
+              </button>
+              <button 
+                onClick={() => setReportType('POLLS_REPORT')}
+                className={`${styles.typeButton} ${reportType === 'POLLS_REPORT' ? styles.active : ''}`}
+              >
+                <FileText size={20} /> Polls Report
+              </button>
             </div>
 
             {/* User Selection for User-Specific Reports */}
@@ -155,6 +180,76 @@ export default function ReportsPage() {
               </div>
             )}
 
+            {/* Date Filter for All Report Types */}
+            <div className={styles.dateFilterSection}>
+              <div className={styles.dateFilterHeader}>
+                <Calendar size={20} className={styles.calendarIcon} />
+                <h3 className={styles.dateFilterTitle}>Date Range Filter</h3>
+              </div>
+              <div className={styles.dateFilter}>
+                <div className={styles.dateInputWrapper}>
+                  <label className={styles.dateLabel}>
+                    <Calendar size={16} />
+                    <span>Start Date</span>
+                  </label>
+                  <div className={styles.dateInputContainer}>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className={styles.dateInput}
+                      placeholder="Select start date"
+                    />
+                    {startDate && (
+                      <button
+                        onClick={() => setStartDate('')}
+                        className={styles.clearDateBtn}
+                        title="Clear date"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className={styles.dateRangeSeparator}>to</div>
+                <div className={styles.dateInputWrapper}>
+                  <label className={styles.dateLabel}>
+                    <Calendar size={16} />
+                    <span>End Date</span>
+                  </label>
+                  <div className={styles.dateInputContainer}>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className={styles.dateInput}
+                      placeholder="Select end date"
+                    />
+                    {endDate && (
+                      <button
+                        onClick={() => setEndDate('')}
+                        className={styles.clearDateBtn}
+                        title="Clear date"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {(startDate || endDate) && (
+                <div className={styles.dateRangeInfo}>
+                  {startDate && endDate ? (
+                    <span>📅 Showing data from {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}</span>
+                  ) : startDate ? (
+                    <span>📅 Showing data from {new Date(startDate).toLocaleDateString()} onwards</span>
+                  ) : (
+                    <span>📅 Showing data until {new Date(endDate).toLocaleDateString()}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={generateReport} 
               className={styles.generateBtn}
@@ -174,7 +269,13 @@ export default function ReportsPage() {
             <div className={styles.reportHeader}>
               <div className={styles.headerTop}>
                 <div className={styles.logoArea}>
-                   <div className={styles.logoPlaceholder}>CWMS</div> 
+                  <div className={styles.logo}>
+                    <div className={styles.logoCircle}>UW</div>
+                    <div className={styles.logoText}>
+                      <div className={styles.logoLine1}>UMURAGE</div>
+                      <div className={styles.logoLine2}>WUBWENGE</div>
+                    </div>
+                  </div>
                 </div>
                 <div className={styles.companyInfo}>
                   <h2 className={styles.companyName}>COMMUNITY WISDOM MANAGEMENT SYSTEM</h2>
@@ -188,69 +289,11 @@ export default function ReportsPage() {
               <h3 className={styles.reportTitle}>{reportData.title}</h3>
             </div>
 
-            {/* Summary Section for General System Report */}
-            {reportType === 'GENERAL_SYSTEM' && reportData.summary && (
-              <div className={styles.summarySection}>
-                <h4>System Statistics</h4>
-                <div className={styles.statsGrid}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Users:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalUsers}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Wisdom Entries:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalWisdoms}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Comments:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalComments}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Likes:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalLikes}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>New Users (30 days):</span>
-                    <span className={styles.statValue}>{reportData.summary.newUsersCount}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>New Wisdom (30 days):</span>
-                    <span className={styles.statValue}>{reportData.summary.recentWisdomsCount}</span>
-                  </div>
-                </div>
-                <h4 style={{marginTop: '20px'}}>Recent Activity (Last 30 Days)</h4>
-              </div>
-            )}
-
-            {/* Summary Section for User-Specific Report */}
-            {reportType === 'USER_SPECIFIC' && reportData.summary && (
-              <div className={styles.summarySection}>
-                <h4>User Summary</h4>
-                <div className={styles.statsGrid}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Wisdom Entries:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalWisdoms}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Views:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalViews}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Likes:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalLikes}</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Total Comments:</span>
-                    <span className={styles.statValue}>{reportData.summary.totalComments}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Table */}
             <table className={styles.reportTable}>
               <thead>
                 <tr>
+                  <th>No.</th>
                   {reportType === 'GENERAL_SYSTEM' && (
                     <>
                       <th>Type</th>
@@ -294,11 +337,42 @@ export default function ReportsPage() {
                       <th>Value</th>
                     </>
                   )}
+                  {reportType === 'QUIZ_ATTEMPTS' && (
+                    <>
+                      <th>User Name</th>
+                      <th>Email</th>
+                      <th>Score</th>
+                      <th>Percentage</th>
+                      <th>Time (mins)</th>
+                      <th>Attempts</th>
+                      <th>Date</th>
+                    </>
+                  )}
+                  {reportType === 'CERTIFICATES_BADGES' && (
+                    <>
+                      <th>User Name</th>
+                      <th>Email</th>
+                      <th>Type</th>
+                      <th>Details</th>
+                      <th>Date</th>
+                    </>
+                  )}
+                  {reportType === 'POLLS_REPORT' && (
+                    <>
+                      <th>Poll Question</th>
+                      <th>Total Votes</th>
+                      <th>Voters</th>
+                      <th>Status</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {reportData.items?.map((item, index) => (
                   <tr key={index}>
+                    <td style={{textAlign: 'center', fontWeight: 'bold'}}>{index + 1}</td>
                     {reportType === 'GENERAL_SYSTEM' && (
                       <>
                         <td>{item.type}</td>
@@ -340,6 +414,36 @@ export default function ReportsPage() {
                       <>
                         <td>{item.metric}</td>
                         <td>{item.value}</td>
+                      </>
+                    )}
+                    {reportType === 'QUIZ_ATTEMPTS' && (
+                      <>
+                        <td>{item.userName}</td>
+                        <td>{item.email}</td>
+                        <td style={{textAlign: 'center'}}>{item.score}/{item.totalQuestions}</td>
+                        <td style={{textAlign: 'center'}}>{item.percentage}%</td>
+                        <td style={{textAlign: 'center'}}>{item.timeSpent}</td>
+                        <td style={{textAlign: 'center'}}>{item.attempts}</td>
+                        <td>{item.date}</td>
+                      </>
+                    )}
+                    {reportType === 'CERTIFICATES_BADGES' && (
+                      <>
+                        <td>{item.userName}</td>
+                        <td>{item.email}</td>
+                        <td>{item.type}</td>
+                        <td>{item.details}</td>
+                        <td>{item.date}</td>
+                      </>
+                    )}
+                    {reportType === 'POLLS_REPORT' && (
+                      <>
+                        <td>{item.question}</td>
+                        <td style={{textAlign: 'center'}}>{item.totalVotes}</td>
+                        <td>{item.voters}</td>
+                        <td>{item.status}</td>
+                        <td>{item.startDate}</td>
+                        <td>{item.endDate}</td>
                       </>
                     )}
                   </tr>

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Heart, Loader2, Eye, User } from 'lucide-react';
-import styles from '../page.module.css';
+import styles from './page.module.css';
 
 export default function AdminLikesPage() {
   const { data: session, status } = useSession();
@@ -73,13 +73,11 @@ export default function AdminLikesPage() {
         </div>
         
         <div className={styles.header}>
-          <div>
-            <h1 className={styles.title}>
-              <Heart size={32} style={{ display: 'inline', marginRight: '0.5rem' }} />
-              Manage Likes
-            </h1>
-            <p className={styles.subtitle}>View wisdom popularity ({likes.length} total likes)</p>
-          </div>
+          <h1 className={styles.title}>
+            <Heart size={32} />
+            Manage Likes
+          </h1>
+          <p className={styles.subtitle}>View wisdom popularity - {likes.length} total likes</p>
         </div>
 
         <div className={styles.likesList}>

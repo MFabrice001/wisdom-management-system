@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link'; // Import Link
 import { MessageSquare, Plus, Loader2, Users, MessageCircle, X } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function ForumPage() {
   const { data: session } = useSession();
+  const { language } = useLanguage();
   const [discussions, setDiscussions] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -15,6 +17,53 @@ export default function ForumPage() {
   const [showModal, setShowModal] = useState(false);
   const [newTopic, setNewTopic] = useState({ title: '', category: 'Traditions', content: '' });
   const [creating, setCreating] = useState(false);
+
+  const translations = {
+    en: {
+      title: 'Community Forum',
+      subtitle: 'Discuss traditional wisdom, share insights, and connect.',
+      newTopic: 'New Topic',
+      accessDenied: 'Please log in to access the community forum.',
+      noDiscussions: 'No discussions found. Be the first to start one!',
+      startNewDiscussion: 'Start New Discussion',
+      topicTitle: 'Topic Title',
+      topicPlaceholder: 'What do you want to discuss?',
+      category: 'Category',
+      content: 'Content',
+      contentPlaceholder: 'Share your thoughts...',
+      cancel: 'Cancel',
+      postTopic: 'Post Topic',
+      categories: {
+        Traditions: 'Traditions',
+        Proverbs: 'Proverbs', 
+        Stories: 'Stories',
+        General: 'General'
+      }
+    },
+    rw: {
+      title: 'Uruganiriro rw\'Abaturage',
+      subtitle: 'Ganirira ku bwenge bwa kera, sangira ibitekerezo, kandi muhurire.',
+      newTopic: 'Ingingo Nshya',
+      accessDenied: 'Nyamuneka injira kugira ngo ubone uruganiriro rw\'abaturage.',
+      noDiscussions: 'Nta biganiro byabonetse. Ba uwa mbere gutangira!',
+      startNewDiscussion: 'Tangira Ikiganiro Gishya',
+      topicTitle: 'Umutwe w\'Ingingo',
+      topicPlaceholder: 'Ni iki ushaka kuganiraho?',
+      category: 'Icyiciro',
+      content: 'Ibirimo',
+      contentPlaceholder: 'Sangira ibitekerezo byawe...',
+      cancel: 'Kuraguza',
+      postTopic: 'Ohereza Ingingo',
+      categories: {
+        Traditions: 'Imigenzo',
+        Proverbs: 'Imigani',
+        Stories: 'Inkuru',
+        General: 'Rusange'
+      }
+    }
+  };
+
+  const t = translations[language];
 
   useEffect(() => {
     if (session) {
@@ -62,7 +111,7 @@ export default function ForumPage() {
   };
 
   if (!session) {
-    return <div className={styles.accessDenied}>Please log in to access the community forum.</div>;
+    return <div className={styles.accessDenied}>{t.accessDenied}</div>;
   }
 
   return (
@@ -70,12 +119,12 @@ export default function ForumPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <div>
-            <h1 className={styles.title}>Community Forum</h1>
-            <p className={styles.subtitle}>Discuss traditional wisdom, share insights, and connect.</p>
+            <h1 className={styles.title}>{t.title}</h1>
+            <p className={styles.subtitle}>{t.subtitle}</p>
           </div>
           <button onClick={() => setShowModal(true)} className={styles.createButton}>
             <Plus size={20} />
-            <span>New Topic</span>
+            <span>{t.newTopic}</span>
           </button>
         </div>
 
@@ -121,7 +170,7 @@ export default function ForumPage() {
                 </Link>
               ))
             ) : (
-              <div className={styles.emptyState}>No discussions found. Be the first to start one!</div>
+              <div className={styles.emptyState}>{t.noDiscussions}</div>
             )}
           </div>
         )}
@@ -131,7 +180,7 @@ export default function ForumPage() {
           <div className={styles.modalOverlay}>
             <div className={styles.modal}>
               <div className={styles.modalHeader}>
-                <h2 className={styles.modalTitle}>Start New Discussion</h2>
+                <h2 className={styles.modalTitle}>{t.startNewDiscussion}</h2>
                 <button onClick={() => setShowModal(false)} className={styles.closeButton}>
                   <X size={24} />
                 </button>
@@ -139,39 +188,39 @@ export default function ForumPage() {
               
               <form onSubmit={handleCreateTopic}>
                 <div className={styles.formGroup}>
-                  <label>Topic Title</label>
+                  <label>{t.topicTitle}</label>
                   <input 
                     type="text" 
                     required 
                     value={newTopic.title}
                     onChange={(e) => setNewTopic({...newTopic, title: e.target.value})}
-                    placeholder="What do you want to discuss?"
+                    placeholder={t.topicPlaceholder}
                     className={styles.input}
                   />
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>Category</label>
+                  <label>{t.category}</label>
                   <select 
                     value={newTopic.category}
                     onChange={(e) => setNewTopic({...newTopic, category: e.target.value})}
                     className={styles.select}
                   >
-                    <option value="Traditions">Traditions</option>
-                    <option value="Proverbs">Proverbs</option>
-                    <option value="Stories">Stories</option>
-                    <option value="General">General</option>
+                    <option value="Traditions">{t.categories.Traditions}</option>
+                    <option value="Proverbs">{t.categories.Proverbs}</option>
+                    <option value="Stories">{t.categories.Stories}</option>
+                    <option value="General">{t.categories.General}</option>
                   </select>
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>Content</label>
+                  <label>{t.content}</label>
                   <textarea 
                     rows="5"
                     required
                     value={newTopic.content}
                     onChange={(e) => setNewTopic({...newTopic, content: e.target.value})}
-                    placeholder="Share your thoughts..."
+                    placeholder={t.contentPlaceholder}
                     className={styles.textarea}
                   />
                 </div>
@@ -182,10 +231,10 @@ export default function ForumPage() {
                     onClick={() => setShowModal(false)}
                     className={styles.cancelButton}
                   >
-                    Cancel
+                    {t.cancel}
                   </button>
                   <button type="submit" disabled={creating} className={styles.submitButton}>
-                    {creating ? <Loader2 className={styles.spinnerSmall} /> : 'Post Topic'}
+                    {creating ? <Loader2 className={styles.spinnerSmall} /> : t.postTopic}
                   </button>
                 </div>
               </form>

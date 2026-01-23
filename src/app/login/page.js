@@ -8,10 +8,12 @@ import {
   LogIn, Mail, Lock, AlertCircle, Shield, 
   User as UserIcon, BookOpen, Heart 
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { language } = useLanguage();
   const [selectedRole, setSelectedRole] = useState('USER'); // Default to Citizen (USER)
   const [formData, setFormData] = useState({
     email: '',
@@ -20,34 +22,95 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const translations = {
+    en: {
+      welcomeBack: 'Welcome Back',
+      signInTo: 'Sign in to Umurage Wubwenge',
+      selectRole: 'Select Your Role',
+      emailAddress: 'Email Address',
+      password: 'Password',
+      rememberMe: 'Remember me',
+      forgotPassword: 'Forgot password?',
+      signingIn: 'Signing In...',
+      signInAs: 'Sign In as',
+      newHere: 'New here?',
+      continueAsGuest: 'Continue as Guest (Read Only)',
+      adminInviteOnly: 'Admin accounts are invitation only.',
+      roles: {
+        USER: { label: 'Citizen', registerText: 'Create Account' },
+        ELDER: { label: 'Elder', registerText: 'Apply as Elder Contributor' },
+        ADMIN: { label: 'Admin', registerText: null }
+      },
+      errors: {
+        fillBoth: 'Please enter both email and password',
+        validGmail: 'Please use a valid @gmail.com address',
+        passwordRequirements: 'Password must be at least 6 characters and contain a capital letter & number',
+        invalidCredentials: 'Invalid email or password',
+        noAdminPrivileges: 'You do not have admin privileges',
+        notElder: 'This account is not registered as an Elder',
+        errorOccurred: 'An error occurred. Please try again.'
+      }
+    },
+    rw: {
+      welcomeBack: 'Murakaza Neza',
+      signInTo: 'Injira muri Umurage Wubwenge',
+      selectRole: 'Hitamo Uruhare Rwawe',
+      emailAddress: 'Aderesi ya Email',
+      password: 'Ijambo Ryibanga',
+      rememberMe: 'Nyibuke',
+      forgotPassword: 'Wibagiwe ijambo ryibanga?',
+      signingIn: 'Kwinjira...',
+      signInAs: 'Injira nka',
+      newHere: 'Ntabwo ufite konti?',
+      continueAsGuest: 'Komeza nk\'Umukerarugendo (Gusoma Gusa)',
+      adminInviteOnly: 'Konti z\'ubuyobozi zihabwa gusa.',
+      roles: {
+        USER: { label: 'Umuturage', registerText: 'Fungura Konti' },
+        ELDER: { label: 'Umusaza', registerText: 'Saba Kuba Umusaza Ufasha' },
+        ADMIN: { label: 'Umuyobozi', registerText: null }
+      },
+      errors: {
+        fillBoth: 'Nyamuneka shyiramo email n\'ijambo ryibanga',
+        validGmail: 'Nyamuneka koresha @gmail.com',
+        passwordRequirements: 'Ijambo ryibanga rigomba kuba rifite byibuze inyuguti 6, inyuguti nkuru n\'umubare',
+        invalidCredentials: 'Email cyangwa ijambo ryibanga sibyo',
+        noAdminPrivileges: 'Ntufite uburenganzira bw\'ubuyobozi',
+        notElder: 'Iyi konti ntiyanditswe nk\'umusaza',
+        errorOccurred: 'Habaye ikosa. Ongera ugerageze.'
+      }
+    }
+  };
+
+  const t = translations[language];
+
   // Role Configurations with Descriptions based on Use Cases
   const roles = [
     {
       id: 'USER',
-      label: 'Citizen',
+      label: t.roles.USER.label,
       icon: UserIcon,
       description: '',
       colorClass: styles.roleButtonUser,
       registerLink: '/register', // Standard registration
-      registerText: 'Create Account' 
+      registerText: t.roles.USER.registerText
     },
     {
       id: 'ELDER',
-      label: 'Elder',
+      label: t.roles.ELDER.label,
       icon: BookOpen,
       description: '',
       colorClass: styles.roleButtonElder,
       registerLink: '/register?role=ELDER', // Dedicated Elder registration link
-      registerText: 'Apply as Elder Contributor'
+      registerText: t.roles.ELDER.registerText
     },
     {
       id: 'ADMIN',
-      label: 'Admin',
+      label: t.roles.ADMIN.label,
       icon: Shield,
       description: '',
       colorClass: styles.roleButtonAdmin,
       registerLink: null, // Admins usually created manually or via secret link
-      registerText: null
+      registerText: t.roles.ADMIN.registerText
     }
   ];
 
@@ -66,14 +129,14 @@ export default function LoginPage() {
 
     // 1. Basic Empty Field Check
     if (!formData.email || !formData.password) {
-      setError('Please enter both email and password');
+      setError(t.errors.fillBoth);
       setLoading(false);
       return;
     }
 
     // 2. Strict Gmail Validation (Security Requirement)
     if (!formData.email.endsWith('@gmail.com')) {
-      setError('Please use a valid @gmail.com address');
+      setError(t.errors.validGmail);
       setLoading(false);
       return;
     }
@@ -82,7 +145,7 @@ export default function LoginPage() {
     // This enforces the security policy on login attempts as well
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
     if (!passwordRegex.test(formData.password)) {
-      setError('Password must be at least 6 characters and contain a capital letter & number');
+      setError(t.errors.passwordRequirements);
       setLoading(false);
       // Clear password on validation failure to ensure it is not shown/persisted in state
       setFormData(prev => ({ ...prev, password: '' }));
@@ -97,7 +160,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError(t.errors.invalidCredentials);
         // Clear password field on failed login attempt
         setFormData(prev => ({ ...prev, password: '' }));
       } else {
@@ -108,12 +171,12 @@ export default function LoginPage() {
         // Role mismatch check
         if (data.role !== selectedRole && data.role !== 'ADMIN') {
           if (selectedRole === 'ADMIN' && data.role !== 'ADMIN') {
-             setError('You do not have admin privileges');
+             setError(t.errors.noAdminPrivileges);
              setLoading(false);
              return;
           }
           if (selectedRole === 'ELDER' && data.role !== 'ELDER') {
-             setError('This account is not registered as an Elder');
+             setError(t.errors.notElder);
              setLoading(false);
              return;
           }
@@ -130,7 +193,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (error) {
-      setError('An error occurred. Please try again.');
+      setError(t.errors.errorOccurred);
        // Clear password field on error
       setFormData(prev => ({ ...prev, password: '' }));
     } finally {
@@ -148,13 +211,13 @@ export default function LoginPage() {
           <div className={styles.logoWrapper}>
             <LogIn size={32} color="white" />
           </div>
-          <h2 className={styles.title}>Welcome Back</h2>
-          <p className={styles.subtitle}>Sign in to Umurage Wubwenge</p>
+          <h2 className={styles.title}>{t.welcomeBack}</h2>
+          <p className={styles.subtitle}>{t.signInTo}</p>
         </div>
 
         {/* Role Selection Grid */}
         <div className={styles.roleSelection}>
-          <p className={styles.roleLabel}>Select Your Role</p>
+          <p className={styles.roleLabel}>{t.selectRole}</p>
           <div className={styles.roleGrid}>
             {roles.map((role) => (
               <button
@@ -189,7 +252,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>Email Address</label>
+              <label htmlFor="email" className={styles.label}>{t.emailAddress}</label>
               <div className={styles.inputWrapper}>
                 <Mail className={styles.inputIcon} size={20} />
                 <input
@@ -207,7 +270,7 @@ export default function LoginPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="password" className={styles.label}>Password</label>
+              <label htmlFor="password" className={styles.label}>{t.password}</label>
               <div className={styles.inputWrapper}>
                 <Lock className={styles.inputIcon} size={20} />
                 <input
@@ -227,10 +290,10 @@ export default function LoginPage() {
             <div className={styles.rememberRow}>
               <div className={styles.checkboxWrapper}>
                 <input id="remember" type="checkbox" className={styles.checkbox} />
-                <label htmlFor="remember" className={styles.checkboxLabel}>Remember me</label>
+                <label htmlFor="remember" className={styles.checkboxLabel}>{t.rememberMe}</label>
               </div>
               <Link href="/forgot-password" className={styles.forgotLink}>
-                Forgot password?
+                {t.forgotPassword}
               </Link>
             </div>
 
@@ -245,12 +308,12 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <div className={styles.spinner}></div>
-                  <span>Signing In...</span>
+                  <span>{t.signingIn}</span>
                 </>
               ) : (
                 <>
                   <LogIn size={20} />
-                  <span>Sign In as {currentRoleConfig?.label}</span>
+                  <span>{t.signInAs} {currentRoleConfig?.label}</span>
                 </>
               )}
             </button>
@@ -260,20 +323,20 @@ export default function LoginPage() {
             {/* DYNAMIC REGISTRATION LINK BASED ON ROLE */}
             {currentRoleConfig?.registerLink ? (
               <p className={styles.footerText}>
-                New here?{' '}
+                {t.newHere}{' '}
                 <Link href={currentRoleConfig.registerLink} className={styles.registerLink}>
                   {currentRoleConfig.registerText}
                 </Link>
               </p>
             ) : (
               <p className={styles.footerText}>
-                Admin accounts are invitation only.
+                {t.adminInviteOnly}
               </p>
             )}
             
             <div className={styles.guestLinkWrapper}>
                <Link href="/wisdom" className={styles.guestLink}>
-                 Continue as Guest (Read Only)
+                 {t.continueAsGuest}
                </Link>
             </div>
           </div>

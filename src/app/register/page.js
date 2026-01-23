@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, BookOpen, MapPin, Fingerprint, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 // Wrapper for Suspense (Required for useSearchParams)
@@ -18,6 +19,7 @@ export default function RegisterPageWrapper() {
 function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { language } = useLanguage();
   
   // Get role from URL (default to USER/Citizen)
   const roleParam = searchParams.get('role');
@@ -36,6 +38,65 @@ function RegisterPageContent() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const translations = {
+    en: {
+      elderApplication: 'Elder Application',
+      createAccount: 'Create Account',
+      joinAsGuardian: 'Join as a guardian of our community wisdom',
+      joinCommunity: 'Join the Umurage Wubwenge community',
+      registrationSuccessful: 'Registration Successful!',
+      redirectingToLogin: 'Redirecting to login...',
+      fullName: 'Full Name',
+      emailAddress: 'Email Address',
+      nationalId: 'National ID (NID)',
+      residence: 'Residence (District, Sector)',
+      password: 'Password',
+      confirmPassword: 'Confirm Password',
+      passwordHelp: 'Must contain at least 1 capital letter & 1 number',
+      creatingAccount: 'Creating Account...',
+      registerAsElder: 'Register as Elder',
+      alreadyHaveAccount: 'Already have an account?',
+      signIn: 'Sign In',
+      errors: {
+        allFieldsRequired: 'All basic fields are required',
+        elderFieldsRequired: 'National ID and Residence are required for Elder registration',
+        validNationalId: 'Please enter a valid 16-digit Rwandan National ID',
+        passwordsNoMatch: 'Passwords do not match',
+        passwordRequirements: 'Password must be at least 6 characters and contain a capital letter & number',
+        validGmail: 'Please use a valid @gmail.com address'
+      }
+    },
+    rw: {
+      elderApplication: 'Gusaba Kuba Umusaza',
+      createAccount: 'Fungura Konti',
+      joinAsGuardian: 'Injira nk\'umugizi w\'ubwenge bw\'umuryango',
+      joinCommunity: 'Injira mu muryango wa Umurage Wubwenge',
+      registrationSuccessful: 'Kwiyandikisha Byagenze Neza!',
+      redirectingToLogin: 'Kwerekeza ku kwinjira...',
+      fullName: 'Amazina Yose',
+      emailAddress: 'Aderesi ya Email',
+      nationalId: 'Indangamuntu (NID)',
+      residence: 'Aho Utuye (Akarere, Umurenge)',
+      password: 'Ijambo Ryibanga',
+      confirmPassword: 'Emeza Ijambo Ryibanga',
+      passwordHelp: 'Rigomba kugira byibuze inyuguti nkuru 1 n\'umubare 1',
+      creatingAccount: 'Gufungura Konti...',
+      registerAsElder: 'Kwiyandikisha nk\'Umusaza',
+      alreadyHaveAccount: 'Usanzwe ufite konti?',
+      signIn: 'Injira',
+      errors: {
+        allFieldsRequired: 'Ibice byose by\'ibanze birakenewe',
+        elderFieldsRequired: 'Indangamuntu n\'aho utuye birakenewe ku musaza',
+        validNationalId: 'Nyamuneka shyiramo indangamuntu y\'u Rwanda ifite imibare 16',
+        passwordsNoMatch: 'Amagambo y\'ibanga ntabwo ahura',
+        passwordRequirements: 'Ijambo ryibanga rigomba kuba rifite byibuze inyuguti 6, inyuguti nkuru n\'umubare',
+        validGmail: 'Nyamuneka koresha @gmail.com'
+      }
+    }
+  };
+
+  const t = translations[language];
 
   // Clear sensitive data on mount to prevent browser autofill persistence
   useEffect(() => {
@@ -72,7 +133,7 @@ function RegisterPageContent() {
 
     // Basic Validation
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('All basic fields are required');
+      setError(t.errors.allFieldsRequired);
       setLoading(false);
       return;
     }
@@ -80,20 +141,20 @@ function RegisterPageContent() {
     // Elder Specific Validation
     if (formData.role === 'ELDER') {
         if (!formData.nationalId || !formData.residence) {
-            setError('National ID and Residence are required for Elder registration');
+            setError(t.errors.elderFieldsRequired);
             setLoading(false);
             return;
         }
         // Basic Rwandan ID format check (16 digits)
         if (!/^\d{16}$/.test(formData.nationalId)) {
-            setError('Please enter a valid 16-digit Rwandan National ID');
+            setError(t.errors.validNationalId);
             setLoading(false);
             return;
         }
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t.errors.passwordsNoMatch);
       setLoading(false);
       // Security: Clear passwords on mismatch
       setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
@@ -103,7 +164,7 @@ function RegisterPageContent() {
     // Password Validation: At least 6 chars, 1 Capital, 1 Number
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
     if (!passwordRegex.test(formData.password)) {
-      setError('Password must be at least 6 characters and contain a capital letter & number');
+      setError(t.errors.passwordRequirements);
       setLoading(false);
       // Security: Clear passwords on weak password error
       setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
@@ -111,7 +172,7 @@ function RegisterPageContent() {
     }
 
     if (!formData.email.endsWith('@gmail.com')) {
-      setError('Please use a valid @gmail.com address');
+      setError(t.errors.validGmail);
       setLoading(false);
       return;
     }
@@ -132,11 +193,17 @@ function RegisterPageContent() {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          throw new Error(data.error || data.message || 'Registration failed');
+        } else {
+          throw new Error('Server error. Please try again later.');
+        }
       }
+
+      const data = await response.json();
 
       setSuccess(true);
       
@@ -175,12 +242,12 @@ function RegisterPageContent() {
             {isElder ? <BookOpen size={32} color="white" /> : <UserPlus size={32} color="white" />}
           </div>
           <h2 className={styles.title}>
-            {isElder ? 'Elder Application' : 'Create Account'}
+            {isElder ? t.elderApplication : t.createAccount}
           </h2>
           <p className={styles.subtitle}>
             {isElder 
-              ? 'Join as a guardian of our community wisdom' 
-              : 'Join the Umurage Wubwenge community'}
+              ? t.joinAsGuardian
+              : t.joinCommunity}
           </p>
         </div>
 
@@ -189,8 +256,8 @@ function RegisterPageContent() {
             <div className={styles.success}>
               <CheckCircle className={styles.successIcon} size={20} />
               <div className={styles.successContent}>
-                <p className={styles.successTitle}>Registration Successful!</p>
-                <p className={styles.successText}>Redirecting to login...</p>
+                <p className={styles.successTitle}>{t.registrationSuccessful}</p>
+                <p className={styles.successText}>{t.redirectingToLogin}</p>
               </div>
             </div>
           )}
@@ -205,7 +272,7 @@ function RegisterPageContent() {
           {/* Form with autoComplete="off" */}
           <form onSubmit={handleSubmit} className={styles.form} autoComplete="off">
             <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>Full Name</label>
+              <label htmlFor="name" className={styles.label}>{t.fullName}</label>
               <div className={styles.inputWrapper}>
                 <User className={styles.inputIcon} size={20} />
                 <input
@@ -223,7 +290,7 @@ function RegisterPageContent() {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>Email Address</label>
+              <label htmlFor="email" className={styles.label}>{t.emailAddress}</label>
               <div className={styles.inputWrapper}>
                 <Mail className={styles.inputIcon} size={20} />
                 <input
@@ -244,7 +311,7 @@ function RegisterPageContent() {
             {isElder && (
                 <>
                     <div className={styles.formGroup}>
-                        <label htmlFor="nationalId" className={styles.label}>National ID (NID)</label>
+                        <label htmlFor="nationalId" className={styles.label}>{t.nationalId}</label>
                         <div className={styles.inputWrapper}>
                             <Fingerprint className={styles.inputIcon} size={20} />
                             <input
@@ -263,7 +330,7 @@ function RegisterPageContent() {
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label htmlFor="residence" className={styles.label}>Residence (District, Sector)</label>
+                        <label htmlFor="residence" className={styles.label}>{t.residence}</label>
                         <div className={styles.inputWrapper}>
                             <MapPin className={styles.inputIcon} size={20} />
                             <input
@@ -283,7 +350,7 @@ function RegisterPageContent() {
             )}
 
             <div className={styles.formGroup}>
-              <label htmlFor="password" className={styles.label}>Password</label>
+              <label htmlFor="password" className={styles.label}>{t.password}</label>
               <div className={styles.inputWrapper}>
                 <Lock className={styles.inputIcon} size={20} />
                 <input
@@ -298,11 +365,11 @@ function RegisterPageContent() {
                   autoComplete="new-password" // Prevents autofill of old passwords
                 />
               </div>
-              <p className={styles.helpText}>Must contain at least 1 capital letter & 1 number</p>
+              <p className={styles.helpText}>{t.passwordHelp}</p>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="confirmPassword" className={styles.label}>Confirm Password</label>
+              <label htmlFor="confirmPassword" className={styles.label}>{t.confirmPassword}</label>
               <div className={styles.inputWrapper}>
                 <Lock className={styles.inputIcon} size={20} />
                 <input
@@ -327,12 +394,12 @@ function RegisterPageContent() {
               {loading ? (
                 <>
                   <Loader2 className={styles.spinner} />
-                  <span>Creating Account...</span>
+                  <span>{t.creatingAccount}</span>
                 </>
               ) : (
                 <>
                   {isElder ? <BookOpen size={20} /> : <UserPlus size={20} />}
-                  <span>{isElder ? 'Register as Elder' : 'Create Account'}</span>
+                  <span>{isElder ? t.registerAsElder : t.createAccount}</span>
                 </>
               )}
             </button>
@@ -340,8 +407,8 @@ function RegisterPageContent() {
 
           <div className={styles.footer}>
             <p className={styles.footerText}>
-              Already have an account?{' '}
-              <Link href="/login" className={styles.loginLink}>Sign In</Link>
+              {t.alreadyHaveAccount}{' '}
+              <Link href="/login" className={styles.loginLink}>{t.signIn}</Link>
             </p>
           </div>
         </div>

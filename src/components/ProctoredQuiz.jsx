@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Camera, Mic, Eye, AlertTriangle, Award } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './ProctoredQuiz.module.css';
 
 export default function ProctoredQuiz() {
   const { data: session } = useSession();
+  const { language } = useLanguage();
   const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
   const [tabSwitches, setTabSwitches] = useState(0);
@@ -17,9 +19,114 @@ export default function ProctoredQuiz() {
   const [answers, setAnswers] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [certificateEligible, setCertificateEligible] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [timerExpired, setTimerExpired] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [maxAttempts] = useState(3);
   
   const videoRef = useRef(null);
   const startTimeRef = useRef(null);
+
+  const translations = {
+    en: {
+      title: 'Proctored Knowledge Quiz',
+      accessDenied: 'Please log in to take the proctored quiz.',
+      attemptsUsed: 'Attempts used',
+      remaining: 'Remaining',
+      requirements: 'Requirements:',
+      webcamAccess: 'Webcam access for monitoring',
+      microphoneAccess: 'Microphone access for audio monitoring',
+      stayOnTab: 'Stay on this tab (max 2 switches allowed)',
+      scoreRequirement: 'Score 70%+ to earn a certificate',
+      maxAttempts: 'Maximum',
+      attemptsAllowed: 'attempts allowed',
+      startQuiz: 'Start Proctored Quiz',
+      quizCompleted: 'Quiz Completed!',
+      tabSwitches: 'Tab Switches',
+      violationsDetected: 'Violations detected',
+      congratulations: 'Congratulations! You are eligible for a certificate.',
+      visitCertificate: 'Visit the Certificate section in the menu to download it.',
+      certificateNotEarned: 'Certificate not earned. Requirements:',
+      score: 'Score ≥ 70%',
+      maxTabSwitches: 'Max 2 tab switches',
+      noViolations: 'No violations',
+      retakeQuiz: 'Retake Quiz',
+      attemptsRemaining: 'attempts remaining',
+      noMoreAttempts: 'No more attempts remaining',
+      used: 'used',
+      question: 'Question',
+      time: 'Time'
+    },
+    rw: {
+      title: 'Ikizamini Gikurikiranwa',
+      accessDenied: 'Nyamuneka injira kugira ngo ukore ikizamini gikurikiranwa.',
+      attemptsUsed: 'Ibigerageza byakoreshejwe',
+      remaining: 'Bisigaye',
+      requirements: 'Ibisabwa:',
+      webcamAccess: 'Kugera kuri kamera yo gukurikirana',
+      microphoneAccess: 'Kugera kuri mikoro yo gukurikirana amajwi',
+      stayOnTab: 'Guma kuri iyi tab (byemewe guhindura inshuro 2 gusa)',
+      scoreRequirement: 'Bonera 70%+ kugira ngo ubone impamyabumenyi',
+      maxAttempts: 'Byibuze',
+      attemptsAllowed: 'ibigerageza byemewe',
+      startQuiz: 'Tangira Ikizamini',
+      quizCompleted: 'Ikizamini Cyarangiye!',
+      tabSwitches: 'Guhindura Tab',
+      violationsDetected: 'Amakosa yabonetse',
+      congratulations: 'Amashimwe! Wujuje ibisabwa kugira ngo ubone impamyabumenyi.',
+      visitCertificate: 'Sura mu gice cy\'impamyabumenyi mu menu kugira ngo uyikuremo.',
+      certificateNotEarned: 'Impamyabumenyi ntiyaboneka. Ibisabwa:',
+      score: 'Amanota ≥ 70%',
+      maxTabSwitches: 'Byibuze guhindura tab inshuro 2',
+      noViolations: 'Nta makosa',
+      retakeQuiz: 'Ongera Ukore Ikizamini',
+      attemptsRemaining: 'ibigerageza bisigaye',
+      noMoreAttempts: 'Nta bigerageza bisigaye',
+      used: 'byakoreshejwe',
+      question: 'Ikibazo',
+      time: 'Igihe'
+    }
+  };
+
+  const t = translations[language];
+
+  // Fetch attempt count on component mount
+  useEffect(() => {
+    const fetchAttemptCount = async () => {
+      try {
+        const attemptsRes = await fetch('/api/citizen/quiz/attempts');
+        const attemptsData = await attemptsRes.json();
+        setAttemptCount(attemptsData.attemptCount);
+      } catch (error) {
+        console.error('Failed to fetch attempt count:', error);
+      }
+    };
+    
+    if (session?.user?.id) {
+      fetchAttemptCount();
+    }
+  }, [session]);
+
+  useEffect(() => {
+    // Timer countdown
+    let timer;
+    if (quizStarted && !showResults && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            setTimerExpired(true);
+            finishQuiz();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [quizStarted, showResults, timeLeft]);
 
   useEffect(() => {
     // Monitor tab switches
@@ -37,6 +144,12 @@ export default function ProctoredQuiz() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [quizStarted, tabSwitches]);
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const setupCamera = async () => {
     try {
@@ -56,6 +169,21 @@ export default function ProctoredQuiz() {
   };
 
   const startQuiz = async () => {
+    // Check attempt count
+    try {
+      const attemptsRes = await fetch('/api/citizen/quiz/attempts');
+      const attemptsData = await attemptsRes.json();
+      
+      if (attemptsData.attemptCount >= maxAttempts) {
+        alert(`You have reached the maximum of ${maxAttempts} quiz attempts.`);
+        return;
+      }
+      
+      setAttemptCount(attemptsData.attemptCount);
+    } catch (error) {
+      console.error('Failed to check attempts:', error);
+    }
+
     const cameraReady = await setupCamera();
     if (!cameraReady) return;
 
@@ -64,6 +192,7 @@ export default function ProctoredQuiz() {
       const data = await res.json();
       setQuestions(data.questions);
       setQuizStarted(true);
+      setTimeLeft(300); // Reset timer to 5 minutes
       startTimeRef.current = new Date();
       setIsSetupComplete(true);
     } catch (error) {
@@ -81,28 +210,65 @@ export default function ProctoredQuiz() {
   };
 
   const finishQuiz = async () => {
-    const score = answers.reduce((acc, answer, index) => {
-      return acc + (answer === questions[index]?.correctAnswer ? 1 : 0);
-    }, 0);
+    const timeSpentMinutes = Math.ceil((new Date() - startTimeRef.current) / 60000);
     
-    const percentage = (score / questions.length) * 100;
-    const eligible = percentage >= 70 && tabSwitches <= 2 && violations.length === 0;
-    
-    setCertificateEligible(eligible);
-    
-    // Submit quiz attempt
-    await fetch('/api/citizen/quiz/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        score,
-        totalQuestions: questions.length,
-        percentage,
-        tabSwitches,
-        violations,
-        certificateEligible: eligible
-      })
-    });
+    if (timerExpired) {
+      // Auto-submit current answers when time expires
+      const currentAnswers = [...answers];
+      // Fill remaining questions with empty answers
+      while (currentAnswers.length < questions.length) {
+        currentAnswers.push(null);
+      }
+      
+      const score = currentAnswers.reduce((acc, answer, index) => {
+        return acc + (answer === questions[index]?.correctAnswer ? 1 : 0);
+      }, 0);
+      
+      const percentage = (score / questions.length) * 100;
+      const eligible = percentage >= 70 && tabSwitches <= 2 && violations.length === 0;
+      
+      setCertificateEligible(eligible);
+      
+      // Submit quiz attempt
+      await fetch('/api/citizen/quiz/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          score,
+          totalQuestions: questions.length,
+          percentage,
+          timeSpentMinutes: 5,
+          tabSwitches,
+          violations: [...violations, 'Time expired - quiz auto-submitted'],
+          certificateEligible: eligible,
+          timeExpired: true
+        })
+      });
+    } else {
+      const score = answers.reduce((acc, answer, index) => {
+        return acc + (answer === questions[index]?.correctAnswer ? 1 : 0);
+      }, 0);
+      
+      const percentage = (score / questions.length) * 100;
+      const eligible = percentage >= 70 && tabSwitches <= 2 && violations.length === 0;
+      
+      setCertificateEligible(eligible);
+      
+      // Submit quiz attempt
+      await fetch('/api/citizen/quiz/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          score,
+          totalQuestions: questions.length,
+          percentage,
+          timeSpentMinutes,
+          tabSwitches,
+          violations,
+          certificateEligible: eligible
+        })
+      });
+    }
     
     setShowResults(true);
     
@@ -112,7 +278,22 @@ export default function ProctoredQuiz() {
     }
   };
 
-  const retakeQuiz = () => {
+  const retakeQuiz = async () => {
+    // Check remaining attempts before allowing retake
+    try {
+      const attemptsRes = await fetch('/api/citizen/quiz/attempts');
+      const attemptsData = await attemptsRes.json();
+      
+      if (attemptsData.attemptCount >= maxAttempts) {
+        alert(`You have reached the maximum of ${maxAttempts} quiz attempts.`);
+        return;
+      }
+      
+      setAttemptCount(attemptsData.attemptCount);
+    } catch (error) {
+      console.error('Failed to check attempts:', error);
+    }
+    
     setIsSetupComplete(false);
     setQuizStarted(false);
     setCurrentQuestion(0);
@@ -121,6 +302,8 @@ export default function ProctoredQuiz() {
     setTabSwitches(0);
     setViolations([]);
     setCertificateEligible(false);
+    setTimeLeft(300);
+    setTimerExpired(false);
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
       setCameraStream(null);
@@ -128,35 +311,49 @@ export default function ProctoredQuiz() {
   };
 
   if (!session) {
-    return <div className={styles.accessDenied}>Please log in to take the proctored quiz.</div>;
+    return <div className={styles.accessDenied}>{t.accessDenied}</div>;
   }
 
   if (!isSetupComplete) {
+    const remainingAttempts = maxAttempts - attemptCount;
+    
     return (
       <div className={styles.setupContainer}>
         <div className={styles.setupCard}>
-          <h1>Proctored Knowledge Quiz</h1>
+          <h1>{t.title}</h1>
+          
+          {attemptCount > 0 && (
+            <div className={styles.attemptInfo}>
+              <AlertTriangle size={20} />
+              <span>{t.attemptsUsed}: {attemptCount}/{maxAttempts} | {t.remaining}: {remainingAttempts}</span>
+            </div>
+          )}
+          
           <div className={styles.requirements}>
-            <h3>Requirements:</h3>
+            <h3>{t.requirements}</h3>
             <div className={styles.requirement}>
               <Camera size={20} />
-              <span>Webcam access for monitoring</span>
+              <span>{t.webcamAccess}</span>
             </div>
             <div className={styles.requirement}>
               <Mic size={20} />
-              <span>Microphone access for audio monitoring</span>
+              <span>{t.microphoneAccess}</span>
             </div>
             <div className={styles.requirement}>
               <Eye size={20} />
-              <span>Stay on this tab (max 2 switches allowed)</span>
+              <span>{t.stayOnTab}</span>
             </div>
             <div className={styles.requirement}>
               <Award size={20} />
-              <span>Score 70%+ to earn a certificate</span>
+              <span>{t.scoreRequirement}</span>
+            </div>
+            <div className={styles.requirement}>
+              <AlertTriangle size={20} />
+              <span>{t.maxAttempts} {maxAttempts} {t.attemptsAllowed}</span>
             </div>
           </div>
           <button onClick={startQuiz} className={styles.startButton}>
-            Start Proctored Quiz
+            {t.startQuiz}
           </button>
         </div>
       </div>
@@ -172,18 +369,18 @@ export default function ProctoredQuiz() {
     return (
       <div className={styles.resultsContainer}>
         <div className={styles.resultsCard}>
-          <h1>Quiz Completed!</h1>
+          <h1>{t.quizCompleted}</h1>
           <div className={styles.scoreDisplay}>
             <span className={styles.score}>{score}/{questions.length}</span>
             <span className={styles.percentage}>{percentage.toFixed(1)}%</span>
           </div>
           
           <div className={styles.violations}>
-            <p>Tab Switches: {tabSwitches}/2</p>
+            <p>{t.tabSwitches}: {tabSwitches}/2</p>
             {violations.length > 0 && (
               <div className={styles.violationList}>
                 <AlertTriangle size={16} />
-                <span>Violations detected</span>
+                <span>{t.violationsDetected}</span>
               </div>
             )}
           </div>
@@ -191,23 +388,30 @@ export default function ProctoredQuiz() {
           {certificateEligible ? (
             <div className={styles.certificate}>
               <Award size={24} />
-              <p>Congratulations! You are eligible for a certificate.</p>
-              <p>Visit the Certificate section in the menu to download it.</p>
+              <p>{t.congratulations}</p>
+              <p>{t.visitCertificate}</p>
             </div>
           ) : (
             <div className={styles.noCertificate}>
-              <p>Certificate not earned. Requirements:</p>
+              <p>{t.certificateNotEarned}</p>
               <ul>
-                <li>Score ≥ 70% {percentage >= 70 ? '✓' : '✗'}</li>
-                <li>Max 2 tab switches {tabSwitches <= 2 ? '✓' : '✗'}</li>
-                <li>No violations {violations.length === 0 ? '✓' : '✗'}</li>
+                <li>{t.score} {percentage >= 70 ? '✓' : '✗'}</li>
+                <li>{t.maxTabSwitches} {tabSwitches <= 2 ? '✓' : '✗'}</li>
+                <li>{t.noViolations} {violations.length === 0 ? '✓' : '✗'}</li>
               </ul>
             </div>
           )}
           
-          <button onClick={retakeQuiz} className={styles.retakeButton}>
-            Retake Quiz
-          </button>
+          {attemptCount < maxAttempts ? (
+            <button onClick={retakeQuiz} className={styles.retakeButton}>
+              {t.retakeQuiz} ({maxAttempts - attemptCount} {t.attemptsRemaining})
+            </button>
+          ) : (
+            <div className={styles.noMoreAttempts}>
+              <AlertTriangle size={20} />
+              <span>{t.noMoreAttempts} ({attemptCount}/{maxAttempts} {t.used})</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -220,8 +424,11 @@ export default function ProctoredQuiz() {
       <div className={styles.monitoringPanel}>
         <video ref={videoRef} autoPlay muted className={styles.cameraFeed} />
         <div className={styles.stats}>
-          <span>Tab Switches: {tabSwitches}/2</span>
-          <span>Question: {currentQuestion + 1}/{questions.length}</span>
+          <span>{t.tabSwitches}: {tabSwitches}/2</span>
+          <span>{t.question}: {currentQuestion + 1}/{questions.length}</span>
+          <div className={`${styles.timer} ${timeLeft <= 60 ? styles.timerWarning : ''}`}>
+            {t.time}: {formatTime(timeLeft)}
+          </div>
         </div>
       </div>
 

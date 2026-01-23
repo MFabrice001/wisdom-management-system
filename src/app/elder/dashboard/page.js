@@ -76,14 +76,12 @@ export default function ElderDashboard() {
             <p className={styles.cardText}>Host a live session for citizens</p>
           </Link>
 
-          {/* Citizen Requests (Specific Topics) */}
-          <Link href="/elder/requests" className={`${styles.card} ${styles.cardBlue}`}>
-            <HelpCircle className={`${styles.icon} ${styles.iconBlue}`} />
-            <h3 className={styles.cardTitle}>Citizen Requests</h3>
-            <p className={styles.cardText}>See requested wisdom topics</p>
+          <Link href="/elder/messages" className={`${styles.card} ${styles.cardBlue}`}>
+            <MessageSquare className={`${styles.icon} ${styles.iconBlue}`} />
+            <h3 className={styles.cardTitle}>Messages</h3>
+            <p className={styles.cardText}>Connect with community members</p>
           </Link>
 
-          {/* General Suggestions (Feedback) - NEW */}
           <Link href="/elder/suggestions" className={`${styles.card} ${styles.cardYellow}`}>
             <Lightbulb className={`${styles.icon} ${styles.iconYellow}`} />
             <h3 className={styles.cardTitle}>Suggestions</h3>

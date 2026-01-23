@@ -1,7 +1,7 @@
 .page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #eff6ff 100%);
-  padding: 3rem 1rem;
+  padding: 1.5rem 0.5rem;
 }
 
 .container {
@@ -14,22 +14,22 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 2rem; /* Adjusted per request */
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #111827; /* gray-900 */
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   line-height: 1.2;
 }
 
 .subtitle {
   color: #6b7280; /* gray-600 */
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
 .headerActions {
@@ -82,8 +82,8 @@
 /* Stats Grid */
 .statsGrid {
   display: grid;
-  gap: 1.5rem; /* Tighter gap */
-  margin-bottom: 2.5rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
   grid-template-columns: 1fr;
 }
 
@@ -101,12 +101,12 @@
 
 .statCard {
   background-color: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   text-decoration: none;
   color: inherit;
   border: 1px solid #f3f4f6;
@@ -120,9 +120,9 @@
 }
 
 .statIcon {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,7 +137,7 @@
 }
 
 .statValue {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #111827;
   line-height: 1;
@@ -155,10 +155,10 @@
 }
 
 .sectionTitle {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: #111827;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -173,8 +173,8 @@
 
 .actionCard {
   background-color: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
   border: 1px solid #f3f4f6;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   display: flex;
@@ -199,25 +199,25 @@ button.actionCard {
 }
 
 .actionIcon {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   color: white;
 }
 
 .actionTitle {
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 0.25rem;
 }
 
 .actionDescription {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #6b7280;
   line-height: 1.4;
 }
@@ -231,19 +231,19 @@ button.actionCard {
 
 .activityCard {
   background-color: white;
-  padding: 1.25rem;
-  border-radius: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
   border: 1px solid #f3f4f6;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .activityIcon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -251,7 +251,7 @@ button.actionCard {
 }
 
 .activityValue {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #111827;
   line-height: 1;

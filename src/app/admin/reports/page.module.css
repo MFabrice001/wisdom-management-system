@@ -124,20 +124,183 @@
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
-.generateBtn {
-  width: 100%;
-  background-color: #16a34a;
-  color: white;
-  padding: 0.75rem 2rem;
-  border-radius: 0.5rem;
+/* Date Filter Section Styles */
+.dateFilterSection {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-radius: 1rem;
+  border: 2px solid #86efac;
+  box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.1);
+}
+
+.dateFilterHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.calendarIcon {
+  color: #16a34a;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.dateFilterTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #166534;
+  margin: 0;
+}
+
+.dateFilter {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.dateInputWrapper {
+  flex: 1;
+  min-width: 200px;
+}
+
+.dateLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
   font-weight: 600;
-  border: none;
+  color: #166534;
+  font-size: 0.875rem;
+}
+
+.dateInputContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dateInput {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  padding-right: 2.5rem;
+  border: 2px solid #86efac;
+  border-radius: 0.75rem;
+  background: white;
+  font-size: 0.9375rem;
+  color: #166534;
+  font-weight: 500;
+  transition: all 0.3s ease;
   cursor: pointer;
+}
+
+.dateInput:hover {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+  transform: translateY(-1px);
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
   transition: background-color 0.2s;
 }
 
+.dateInput::-webkit-calendar-picker-indicator:hover {
+  background-color: #f0fdf4;
+}
+
+.clearDateBtn {
+  position: absolute;
+  right: 2.5rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.8;
+}
+
+.clearDateBtn:hover {
+  opacity: 1;
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.dateRangeSeparator {
+  font-weight: 600;
+  color: #16a34a;
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.dateRangeInfo {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  border-left: 4px solid #16a34a;
+  color: #166534;
+  font-weight: 500;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.generateBtn {
+  width: 100%;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3);
+  margin-top: 1.5rem;
+}
+
 .generateBtn:hover {
-  background-color: #15803d;
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px -2px rgba(22, 163, 74, 0.4);
 }
 
 .generateBtn:disabled {
@@ -193,6 +356,47 @@
   border-radius: 50%;
 }
 
+/* Professional Logo Styles */
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.logoCircle {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.5rem;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.5rem;
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.logoLine1,
+.logoLine2 {
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: #16a34a;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
 .companyInfo {
   text-align: left;
 }
@@ -203,6 +407,7 @@
   color: black;
   margin-bottom: 0.25rem;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .divider {

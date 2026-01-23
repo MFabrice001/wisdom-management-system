@@ -1,13 +1,13 @@
 .page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #eff6ff 100%);
-  padding: 3rem 0;
+  padding: 1.5rem 0;
 }
 
 .container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1rem;
 }
 
 .loading {
@@ -41,13 +41,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #111827;
 }
@@ -73,29 +73,29 @@
 
 .profileCard {
   background: white;
-  border-radius: 1rem;
-  padding: 2rem;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .profileHeader {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.25rem;
   flex-wrap: wrap;
 }
 
 .avatar {
-  width: 6rem;
-  height: 6rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #22c55e, #16a34a);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: bold;
   flex-shrink: 0;
 }
@@ -105,10 +105,10 @@
 }
 
 .name {
-  font-size: 1.875rem;
+  font-size: 1.375rem;
   font-weight: bold;
   color: #111827;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .email {
@@ -116,7 +116,7 @@
   align-items: center;
   gap: 0.5rem;
   color: #6b7280;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .badges {
@@ -153,20 +153,20 @@
 }
 
 .statsSection {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .sectionTitle {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: bold;
   color: #111827;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .statsGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 @media (min-width: 640px) {
@@ -183,12 +183,12 @@
 
 .statCard {
   background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
+  border-radius: 0.75rem;
+  padding: 1rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   transition: transform 0.2s;
 }
 
@@ -198,9 +198,9 @@
 }
 
 .statIcon {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -213,7 +213,7 @@
 }
 
 .statNumber {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #111827;
   line-height: 1;
@@ -226,14 +226,14 @@
 }
 
 .wisdomSection {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .viewAllLink {
@@ -251,7 +251,7 @@
 .wisdomGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -268,8 +268,8 @@
 
 .wisdomCard {
   background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
+  border-radius: 0.75rem;
+  padding: 1rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   text-decoration: none;
   transition: all 0.2s;
@@ -283,7 +283,7 @@
 .wisdomHeader {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   flex-wrap: wrap;
 }
 
@@ -306,7 +306,7 @@
 }
 
 .wisdomTitle {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #111827;
   margin-bottom: 0.5rem;
@@ -314,9 +314,9 @@
 
 .wisdomContent {
   color: #6b7280;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
 }
 
 .wisdomFooter {
@@ -333,13 +333,13 @@
 }
 
 .infoSection {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .infoCard {
   background: white;
-  border-radius: 1rem;
-  padding: 2rem;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
@@ -347,7 +347,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px solid #e5e7eb;
 }
 

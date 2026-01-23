@@ -2,16 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Users, Search, Award, Loader2, CheckCircle, AlertCircle, Edit } from 'lucide-react';
+import { Users, Search, Loader2, Edit, Trash2, Plus, UserPlus, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function ManageUsersPage() {
+  const { language } = useLanguage();
   const { data: session } = useSession();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [awarding, setAwarding] = useState(null);
   const [updatingRole, setUpdatingRole] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'USER' });
 
   useEffect(() => {
     if (session?.user?.role === 'ADMIN') {
@@ -24,38 +32,15 @@ export default function ManageUsersPage() {
       const res = await fetch('/api/admin/users');
       if (res.ok) {
         const data = await res.json();
+        console.log('Fetched users:', data);
         setUsers(data.users || []);
+      } else {
+        console.error('Failed to fetch users:', res.status);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAwardBadge = async (userId, badgeType) => {
-    if (!confirm(`Award "${badgeType}" badge to this citizen?`)) return;
-    
-    setAwarding(userId);
-    try {
-      const res = await fetch('/api/admin/badges/award', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, badgeType }),
-      });
-
-      if (res.ok) {
-        alert('Badge awarded successfully!');
-        fetchUsers(); // Refresh to potentially show badge status if API returns it
-      } else {
-        const data = await res.json();
-        alert(data.message || 'Failed to award badge.');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('An error occurred.');
-    } finally {
-      setAwarding(null);
     }
   };
 
@@ -83,33 +68,64 @@ export default function ManageUsersPage() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        alert('User deleted successfully!');
+        fetchUsers();
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete user.');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('An error occurred.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    
+    setAdding(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      });
+
+      if (res.ok) {
+        alert('User added successfully!');
+        fetchUsers();
+        setShowAddModal(false);
+        setNewUser({ name: '', email: '', role: 'USER' });
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to add user.');
+      }
+    } catch (error) {
+      console.error('Error adding user:', error);
+      alert('An error occurred.');
+    } finally {
+      setAdding(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const checkEligibility = (user) => {
-    if (user.role !== 'USER') return []; 
-
-    const badges = [];
-    
-    // Active Voice: 5+ Comments
-    if ((user._count?.comments || 0) >= 5) {
-        badges.push('Active Voice');
-    }
-    
-    // Community Pillar: 3+ Votes
-    if ((user._count?.votes || 0) >= 3) {
-        badges.push('Community Pillar');
-    }
-
-    // Wisdom Seeker: 5+ Bookmarks
-    if ((user._count?.bookmarks || 0) >= 5) {
-        badges.push('Wisdom Seeker');
-    }
-
-    return badges;
-  };
 
   if (!session || session.user.role !== 'ADMIN') {
       return <div className={styles.loadingWrapper}>Unauthorized Access</div>;
@@ -120,19 +136,35 @@ export default function ManageUsersPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+        <div className={styles.headerTop}>
+          <Link href="/admin" className={styles.backButton}>
+            <ArrowLeft size={20} />
+            Back to Dashboard
+          </Link>
+        </div>
+
         <div className={styles.header}>
             <h1 className={styles.title}>
-            <Users className={styles.titleIcon} /> Manage Users
+            <Users className={styles.titleIcon} /> Manage Users ({users.length})
             </h1>
-            <div className={styles.searchWrapper}>
-                <Search className={styles.searchIcon} size={20} />
-                <input 
-                    type="text" 
-                    placeholder="Search users..." 
-                    className={styles.searchInput}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <div className={styles.headerActions}>
+                <div className={styles.searchWrapper}>
+                    <Search className={styles.searchIcon} size={20} />
+                    <input 
+                        type="text" 
+                        placeholder="Search users..." 
+                        className={styles.searchInput}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <button 
+                    onClick={() => setShowAddModal(true)}
+                    className={styles.addButton}
+                >
+                    <UserPlus size={20} />
+                    Add User
+                </button>
             </div>
         </div>
 
@@ -143,15 +175,11 @@ export default function ManageUsersPage() {
                 <th className={styles.th}>User</th>
                 <th className={styles.th}>Role</th>
                 <th className={styles.th}>Joined</th>
-                <th className={styles.th}>Badge Eligibility</th>
                 <th className={styles.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const eligibleBadges = checkEligibility(user);
-                const isCitizen = user.role === 'USER';
-                
                 return (
                     <tr key={user.id} className={styles.tr}>
                     <td className={styles.td}>
@@ -174,40 +202,21 @@ export default function ManageUsersPage() {
                     <td className={styles.tdText}>
                         {new Date(user.createdAt).toLocaleDateString()}
                     </td>
-                    <td className={styles.td}>
-                        {eligibleBadges.length > 0 ? (
-                            <div className={styles.badgesList}>
-                                {eligibleBadges.map(b => (
-                                    <span key={b} className={styles.eligibleBadge}>
-                                        <CheckCircle size={12} /> {b}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <span className={styles.noEligibility}>
-                                {isCitizen ? 'No tasks completed' : 'N/A'}
-                            </span>
-                        )}
-                    </td>
                     <td className={styles.tdActions}>
-                        {isCitizen && eligibleBadges.length > 0 ? (
-                             <div className={styles.actionGroup}>
-                                {eligibleBadges.map(badge => (
-                                    <button 
-                                        key={badge}
-                                        onClick={() => handleAwardBadge(user.id, badge)}
-                                        className={styles.awardButton}
-                                        disabled={awarding === user.id}
-                                        title={`Award ${badge}`}
-                                    >
-                                        {awarding === user.id ? <Loader2 size={12} className={styles.spinner} /> : <Award size={12} />}
-                                        Award {badge}
-                                    </button>
-                                ))}
-                             </div>
-                        ) : (
-                            <span className={styles.noActions}>-</span>
-                        )}
+                        <div className={styles.actionGroup}>
+                            {user.id !== session.user.id && (
+                                <button 
+                                    onClick={() => {
+                                        setSelectedUser(user);
+                                        setShowDeleteModal(true);
+                                    }}
+                                    className={styles.deleteButton}
+                                    title="Delete User"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
+                            )}
+                        </div>
                     </td>
                     </tr>
                 );
@@ -218,6 +227,117 @@ export default function ManageUsersPage() {
               <div className={styles.emptyState}>No users found.</div>
           )}
         </div>
+
+        {/* Add User Modal */}
+        {showAddModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modal}>
+              <h3 className={styles.modalTitle}>Add New User</h3>
+              <form onSubmit={handleAddUser} className={styles.form}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Name</label>
+                  <input
+                    type="text"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                    className={styles.input}
+                    required
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Email</label>
+                  <input
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    className={styles.input}
+                    required
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Role</label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                    className={styles.select}
+                  >
+                    <option value="USER">Citizen</option>
+                    <option value="ELDER">Elder</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className={styles.cancelButton}
+                    disabled={adding}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={styles.submitButton}
+                    disabled={adding}
+                  >
+                    {adding ? (
+                      <>
+                        <Loader2 className={styles.spinner} />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} />
+                        Add User
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && selectedUser && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.deleteModal}>
+              <h3 className={styles.deleteModalTitle}>Delete User</h3>
+              <p className={styles.deleteModalText}>
+                Are you sure you want to delete <strong>{selectedUser.name}</strong>? This action cannot be undone.
+              </p>
+              <div className={styles.modalActions}>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setSelectedUser(null);
+                  }}
+                  className={styles.cancelButton}
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  className={styles.deleteConfirmButton}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className={styles.spinner} />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} />
+                      Delete
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

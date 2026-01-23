@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MessageCircle, Trash2, Loader2, Eye } from 'lucide-react';
-import styles from '../page.module.css';
+import styles from './page.module.css';
 
 export default function AdminCommentsPage() {
   const { data: session, status } = useSession();

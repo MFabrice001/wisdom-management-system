@@ -40,8 +40,22 @@ export async function DELETE(request, { params }) {
 
     const { id } = await params;
 
-    await prisma.user.delete({
-      where: { id }
+    // Prevent admin from deleting themselves
+    if (id === session.user.id) {
+      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+    }
+
+    // Delete user and all related data
+    await prisma.$transaction(async (tx) => {
+      // Delete related data first
+      await tx.comment.deleteMany({ where: { userId: id } });
+      await tx.like.deleteMany({ where: { userId: id } });
+      await tx.bookmark.deleteMany({ where: { userId: id } });
+      await tx.vote.deleteMany({ where: { userId: id } });
+      await tx.wisdom.deleteMany({ where: { authorId: id } });
+      
+      // Finally delete the user
+      await tx.user.delete({ where: { id } });
     });
 
     return NextResponse.json({ message: 'User deleted successfully' });

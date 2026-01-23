@@ -5,13 +5,70 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Edit, BookOpen, Heart, MessageCircle, Award, Mail, Calendar, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { language } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const translations = {
+    en: {
+      title: 'My Profile',
+      editProfile: 'Edit Profile',
+      failedToLoad: 'Failed to load profile',
+      admin: 'Admin',
+      elder: 'Elder',
+      joined: 'Joined',
+      statistics: 'Statistics',
+      wisdomShared: 'Wisdom Shared',
+      likesGiven: 'Likes Given',
+      comments: 'Comments',
+      bookmarks: 'Bookmarks',
+      recentWisdom: 'Recent Wisdom',
+      viewAll: 'View All',
+      accountInformation: 'Account Information',
+      fullName: 'Full Name',
+      emailAddress: 'Email Address',
+      accountType: 'Account Type',
+      memberSince: 'Member Since',
+      roles: {
+        ADMIN: 'Administrator',
+        ELDER: 'Elder',
+        USER: 'Member'
+      }
+    },
+    rw: {
+      title: 'Umwirondoro Wanjye',
+      editProfile: 'Hindura Umwirondoro',
+      failedToLoad: 'Byanze gupakurura umwirondoro',
+      admin: 'Umuyobozi',
+      elder: 'Umusaza',
+      joined: 'Yinjiye',
+      statistics: 'Imibare',
+      wisdomShared: 'Ubwenge Bwasangiwe',
+      likesGiven: 'Amakunze Yatanzwe',
+      comments: 'Ibisobanuro',
+      bookmarks: 'Ibisabwe',
+      recentWisdom: 'Ubwenge Bushya',
+      viewAll: 'Reba Byose',
+      accountInformation: 'Amakuru y\'Konti',
+      fullName: 'Amazina Yose',
+      emailAddress: 'Aderesi ya Email',
+      accountType: 'Ubwoko bwa Konti',
+      memberSince: 'Umunyamuryango Kuva',
+      roles: {
+        ADMIN: 'Umuyobozi',
+        ELDER: 'Umusaza',
+        USER: 'Umunyamuryango'
+      }
+    }
+  };
+
+  const t = translations[language];
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -47,7 +104,7 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className={styles.error}>
-        <p>Failed to load profile</p>
+        <p>{t.failedToLoad}</p>
       </div>
     );
   }
@@ -65,10 +122,10 @@ export default function ProfilePage() {
       <div className={styles.container}>
         {/* Header */}
         <div className={styles.header}>
-          <h1 className={styles.title}>My Profile</h1>
+          <h1 className={styles.title}>{t.title}</h1>
           <Link href="/profile/edit" className={styles.editButton}>
             <Edit size={18} />
-            Edit Profile
+            {t.editProfile}
           </Link>
         </div>
 
@@ -88,18 +145,18 @@ export default function ProfilePage() {
                 {profile.role === 'ADMIN' && (
                   <span className={styles.adminBadge}>
                     <Award size={14} />
-                    Admin
+                    {t.admin}
                   </span>
                 )}
                 {profile.role === 'ELDER' && (
                   <span className={styles.elderBadge}>
                     <Award size={14} />
-                    Elder
+                    {t.elder}
                   </span>
                 )}
                 <span className={styles.dateBadge}>
                   <Calendar size={14} />
-                  Joined {formatDate(profile.createdAt)}
+                  {t.joined} {formatDate(profile.createdAt)}
                 </span>
               </div>
             </div>
@@ -108,7 +165,7 @@ export default function ProfilePage() {
 
         {/* Statistics */}
         <div className={styles.statsSection}>
-          <h3 className={styles.sectionTitle}>Statistics</h3>
+          <h3 className={styles.sectionTitle}>{t.statistics}</h3>
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
               <div className={styles.statIcon} style={{background: 'linear-gradient(135deg, #22c55e, #16a34a)'}}>
@@ -116,7 +173,7 @@ export default function ProfilePage() {
               </div>
               <div className={styles.statInfo}>
                 <p className={styles.statNumber}>{profile._count?.wisdoms || 0}</p>
-                <p className={styles.statLabel}>Wisdom Shared</p>
+                <p className={styles.statLabel}>{t.wisdomShared}</p>
               </div>
             </div>
 
@@ -126,7 +183,7 @@ export default function ProfilePage() {
               </div>
               <div className={styles.statInfo}>
                 <p className={styles.statNumber}>{profile._count?.likes || 0}</p>
-                <p className={styles.statLabel}>Likes Given</p>
+                <p className={styles.statLabel}>{t.likesGiven}</p>
               </div>
             </div>
 
@@ -136,7 +193,7 @@ export default function ProfilePage() {
               </div>
               <div className={styles.statInfo}>
                 <p className={styles.statNumber}>{profile._count?.comments || 0}</p>
-                <p className={styles.statLabel}>Comments</p>
+                <p className={styles.statLabel}>{t.comments}</p>
               </div>
             </div>
 
@@ -146,7 +203,7 @@ export default function ProfilePage() {
               </div>
               <div className={styles.statInfo}>
                 <p className={styles.statNumber}>{profile._count?.bookmarks || 0}</p>
-                <p className={styles.statLabel}>Bookmarks</p>
+                <p className={styles.statLabel}>{t.bookmarks}</p>
               </div>
             </div>
           </div>
@@ -156,9 +213,9 @@ export default function ProfilePage() {
         {profile.wisdoms && profile.wisdoms.length > 0 && (
           <div className={styles.wisdomSection}>
             <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>Recent Wisdom</h3>
+              <h3 className={styles.sectionTitle}>{t.recentWisdom}</h3>
               <Link href="/wisdom" className={styles.viewAllLink}>
-                View All
+                {t.viewAll}
               </Link>
             </div>
             <div className={styles.wisdomGrid}>
@@ -198,25 +255,24 @@ export default function ProfilePage() {
 
         {/* Account Info */}
         <div className={styles.infoSection}>
-          <h3 className={styles.sectionTitle}>Account Information</h3>
+          <h3 className={styles.sectionTitle}>{t.accountInformation}</h3>
           <div className={styles.infoCard}>
             <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Full Name</span>
+              <span className={styles.infoLabel}>{t.fullName}</span>
               <span className={styles.infoValue}>{profile.name}</span>
             </div>
             <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Email Address</span>
+              <span className={styles.infoLabel}>{t.emailAddress}</span>
               <span className={styles.infoValue}>{profile.email}</span>
             </div>
             <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Account Type</span>
+              <span className={styles.infoLabel}>{t.accountType}</span>
               <span className={styles.infoValue}>
-                {profile.role === 'ADMIN' ? 'Administrator' : 
-                 profile.role === 'ELDER' ? 'Elder' : 'Member'}
+                {t.roles[profile.role] || profile.role}
               </span>
             </div>
             <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Member Since</span>
+              <span className={styles.infoLabel}>{t.memberSince}</span>
               <span className={styles.infoValue}>{formatDate(profile.createdAt)}</span>
             </div>
           </div>

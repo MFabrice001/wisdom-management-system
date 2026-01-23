@@ -60,6 +60,21 @@ export async function GET(req, { params }) {
     doc.setFillColor(41, 128, 185);
     doc.rect(20, 20, 257, 25, 'F');
     
+    // Logo - Professional circular design
+    doc.setFillColor(22, 163, 74); // Green background
+    doc.circle(40, 32.5, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('UW', 40, 35, { align: 'center' });
+    
+    // Logo text
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('UMURAGE', 52, 30, { align: 'left' });
+    doc.text('WUBWENGE', 52, 36, { align: 'left' });
+    
     // Title
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);

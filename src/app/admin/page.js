@@ -9,9 +9,11 @@ import {
   ArrowUpRight, Loader2, Settings, BarChart3, RefreshCw, FileText, Eye, Calendar, Lightbulb
 } from 'lucide-react';
 import AnalyticsChart from '@/components/admin/AnalyticsChart';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function AdminDashboard() {
+  const { language } = useLanguage();
   const { data: session, status } = useSession();
   const router = useRouter();
   const [analytics, setAnalytics] = useState(null);

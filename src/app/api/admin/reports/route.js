@@ -13,6 +13,19 @@ export async function GET(req) {
   const type = searchParams.get('type');
   const userId = searchParams.get('userId');
   const category = searchParams.get('category');
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+
+  // Build date filter
+  const dateFilter = {};
+  if (startDate) {
+    dateFilter.gte = new Date(startDate);
+  }
+  if (endDate) {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    dateFilter.lte = end;
+  }
 
   try {
     let items = [];
@@ -22,26 +35,34 @@ export async function GET(req) {
     if (type === 'GENERAL_SYSTEM') {
       title = "General System Report";
       
-      // Get system statistics
+      // Build where clause for date filtering
+      const userDateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      const wisdomDateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      
+      // Get system statistics with date filter
       const [totalUsers, totalWisdoms, totalComments, totalLikes, totalPolls, totalSuggestions, totalCertificates] = await Promise.all([
-        prisma.user.count(),
-        prisma.wisdom.count(),
-        prisma.comment.count(),
-        prisma.like.count(),
-        prisma.poll.count(),
-        prisma.suggestion.count(),
-        prisma.certificate.count()
+        prisma.user.count({ where: userDateWhere }),
+        prisma.wisdom.count({ where: wisdomDateWhere }),
+        prisma.comment.count({ where: Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {} }),
+        prisma.like.count({ where: Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {} }),
+        prisma.poll.count({ where: Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {} }),
+        prisma.suggestion.count({ where: Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {} }),
+        prisma.certificate.count({ where: Object.keys(dateFilter).length > 0 ? { issuedAt: dateFilter } : {} })
       ]);
 
-      // Get recent new users (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Get users based on date filter or last 30 days
+      let userCreatedAtFilter;
+      if (Object.keys(dateFilter).length > 0) {
+        userCreatedAtFilter = dateFilter;
+      } else {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        userCreatedAtFilter = { gte: thirtyDaysAgo };
+      }
       
       const newUsers = await prisma.user.findMany({
         where: {
-          createdAt: {
-            gte: thirtyDaysAgo
-          }
+          createdAt: userCreatedAtFilter
         },
         orderBy: { createdAt: 'desc' },
         select: {
@@ -52,12 +73,19 @@ export async function GET(req) {
         }
       });
 
-      // Get recent wisdom entries (last 30 days)
+      // Get wisdom entries based on date filter or last 30 days
+      let wisdomCreatedAtFilter;
+      if (Object.keys(dateFilter).length > 0) {
+        wisdomCreatedAtFilter = dateFilter;
+      } else {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        wisdomCreatedAtFilter = { gte: thirtyDaysAgo };
+      }
+      
       const recentWisdoms = await prisma.wisdom.findMany({
         where: {
-          createdAt: {
-            gte: thirtyDaysAgo
-          }
+          createdAt: wisdomCreatedAtFilter
         },
         orderBy: { createdAt: 'desc' },
         include: {
@@ -112,6 +140,9 @@ export async function GET(req) {
         whereClause.category = category;
         title += ` - ${category.replace('_', ' ')}`;
       }
+      if (Object.keys(dateFilter).length > 0) {
+        whereClause.createdAt = dateFilter;
+      }
 
       const wisdoms = await prisma.wisdom.findMany({
         where: whereClause,
@@ -144,9 +175,13 @@ export async function GET(req) {
     else if (type === 'WISDOM_ENTRIES') {
       title = "Wisdom Contributors Report";
       
+      const wisdomWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      
       const users = await prisma.user.findMany({
         include: {
-          wisdoms: true
+          wisdoms: {
+            where: wisdomWhere
+          }
         }
       });
 
@@ -163,7 +198,10 @@ export async function GET(req) {
     else if (type === 'SUGGESTIONS_ACTIVITY') {
       title = "Suggestions Activity Report";
       
+      const suggestionWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      
       const suggestions = await prisma.suggestion.findMany({
+        where: suggestionWhere,
         include: {
           user: {
             select: { name: true }
@@ -182,12 +220,14 @@ export async function GET(req) {
     else if (type === 'SYSTEM_OVERVIEW') {
       title = "System Overview Report";
       
+      const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      
       const [totalUsers, totalWisdoms, totalComments, totalLikes, totalPolls] = await Promise.all([
-        prisma.user.count(),
-        prisma.wisdom.count(),
-        prisma.comment.count(),
-        prisma.like.count(),
-        prisma.poll.count()
+        prisma.user.count({ where: dateWhere }),
+        prisma.wisdom.count({ where: dateWhere }),
+        prisma.comment.count({ where: dateWhere }),
+        prisma.like.count({ where: dateWhere }),
+        prisma.poll.count({ where: dateWhere })
       ]);
 
       items = [
@@ -197,6 +237,133 @@ export async function GET(req) {
         { metric: 'Total Likes', value: totalLikes },
         { metric: 'Total Polls', value: totalPolls }
       ];
+    }
+    else if (type === 'QUIZ_ATTEMPTS') {
+      title = "Quiz Attempts Report";
+      
+      const quizWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      
+      const attempts = await prisma.quizAttempt.findMany({
+        where: quizWhere,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      const userAttempts = {};
+      attempts.forEach(attempt => {
+        const userId = attempt.user.id;
+        if (!userAttempts[userId]) {
+          userAttempts[userId] = {
+            userName: attempt.user.name,
+            email: attempt.user.email,
+            attempts: 0,
+            lastScore: 0,
+            lastTotal: 0,
+            lastPercentage: 0,
+            lastDate: attempt.createdAt,
+            timeSpent: 0
+          };
+        }
+        userAttempts[userId].attempts++;
+        if (new Date(attempt.createdAt) >= new Date(userAttempts[userId].lastDate)) {
+          userAttempts[userId].lastScore = attempt.score;
+          userAttempts[userId].lastTotal = attempt.totalQuestions;
+          userAttempts[userId].lastPercentage = attempt.percentage;
+          userAttempts[userId].lastDate = attempt.createdAt;
+          userAttempts[userId].timeSpent = attempt.timeSpentMinutes || 0;
+        }
+      });
+
+      items = Object.values(userAttempts).map(ua => ({
+        userName: ua.userName,
+        email: ua.email,
+        score: ua.lastScore,
+        totalQuestions: ua.lastTotal,
+        percentage: ua.lastPercentage.toFixed(1),
+        timeSpent: ua.timeSpent,
+        attempts: ua.attempts,
+        date: new Date(ua.lastDate).toLocaleDateString()
+      }));
+    }
+    else if (type === 'CERTIFICATES_BADGES') {
+      title = "Certificates & Badges Report";
+      
+      const certWhere = Object.keys(dateFilter).length > 0 ? { issuedAt: dateFilter } : {};
+      const badgeWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      
+      const [certificates, badges] = await Promise.all([
+        prisma.certificate.findMany({
+          where: certWhere,
+          include: {
+            user: { select: { name: true, email: true } },
+            quizAttempt: { select: { score: true, totalQuestions: true, percentage: true } }
+          },
+          orderBy: { issuedAt: 'desc' }
+        }),
+        prisma.awardedBadge.findMany({
+          where: badgeWhere,
+          include: {
+            user: { select: { name: true, email: true } }
+          },
+          orderBy: { createdAt: 'desc' }
+        })
+      ]);
+
+      items = [
+        ...certificates.map(cert => ({
+          userName: cert.user.name,
+          email: cert.user.email,
+          type: 'Certificate',
+          details: `${cert.certificateNumber} - Score: ${cert.quizAttempt.percentage.toFixed(1)}%`,
+          date: new Date(cert.issuedAt).toLocaleDateString()
+        })),
+        ...badges.map(badge => ({
+          userName: badge.user.name,
+          email: badge.user.email,
+          type: 'Badge',
+          details: badge.badgeType,
+          date: new Date(badge.createdAt).toLocaleDateString()
+        }))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+    else if (type === 'POLLS_REPORT') {
+      title = "Polls Report";
+      
+      const pollWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+      
+      const polls = await prisma.poll.findMany({
+        where: pollWhere,
+        include: {
+          votes: {
+            include: {
+              user: {
+                select: { name: true }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      items = polls.map(poll => {
+        const now = new Date();
+        const endDate = new Date(poll.endDate);
+        const isExpired = now > endDate;
+        const actualStatus = poll.isActive && !isExpired ? 'Active' : 'Expired';
+        
+        return {
+          question: poll.question,
+          totalVotes: poll.votes.length,
+          voters: poll.votes.map(v => v.user.name).join(', ') || 'No votes yet',
+          status: actualStatus,
+          startDate: new Date(poll.startDate).toLocaleDateString(),
+          endDate: new Date(poll.endDate).toLocaleDateString()
+        };
+      });
     }
 
     return NextResponse.json({ title, items, summary }, { status: 200 });
