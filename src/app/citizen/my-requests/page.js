@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Loader2, MessageSquare, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Loader2, MessageSquare, CheckCircle, Clock, AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import styles from './page.module.css';
 
@@ -38,6 +38,7 @@ export default function MyRequestsPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         <div className={styles.header}>
           <h1 className={styles.title}>My Requests & Suggestions</h1>
           <div className={styles.actions}>

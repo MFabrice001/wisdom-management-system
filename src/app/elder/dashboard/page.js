@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { BookOpen, Video, Users, Star, MessageSquare, Heart, HelpCircle, Loader2, Lightbulb, BarChart3 } from 'lucide-react';
+import { BookOpen, Video, Users, Star, MessageSquare, Heart, HelpCircle, Loader2, Lightbulb, BarChart3, TrendingUp, Eye, ThumbsUp } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function ElderDashboard() {
@@ -111,7 +111,8 @@ export default function ElderDashboard() {
               
               {/* Bars and X-axis labels */}
               {monthlyData.map((data, index) => {
-                const barHeight = (data.activities / 25) * 200;
+                const maxActivities = Math.max(...monthlyData.map(d => d.activities), 1);
+                const barHeight = (data.activities / maxActivities) * 200;
                 const x = 70 + (index * 55);
                 return (
                   <g key={data.month}>
@@ -120,7 +121,7 @@ export default function ElderDashboard() {
                       x={x}
                       y={250 - barHeight}
                       width="40"
-                      height={barHeight}
+                      height={Math.max(barHeight, 2)}
                       fill="#3B82F6"
                       className={styles.chartBar}
                     />
@@ -129,9 +130,11 @@ export default function ElderDashboard() {
                       {data.month}
                     </text>
                     {/* Value label */}
-                    <text x={x + 20} y={245 - barHeight} textAnchor="middle" fontSize="10" fill="#374151">
-                      {data.activities}
-                    </text>
+                    {data.activities > 0 && (
+                      <text x={x + 20} y={Math.max(240 - barHeight, 15)} textAnchor="middle" fontSize="10" fill="#374151" fontWeight="600">
+                        {data.activities}
+                      </text>
+                    )}
                   </g>
                 );
               })}
@@ -141,50 +144,90 @@ export default function ElderDashboard() {
         
         {/* Engagement Section */}
         <div className={styles.activitySection}>
-            <h2 className={styles.sectionTitle}>Recent Engagement on Your Wisdom</h2>
+            <h2 className={styles.sectionTitle}><TrendingUp size={24} /> Recent Engagement on Your Wisdom</h2>
             
             {loading ? (
-              <div className="flex justify-center p-4"><Loader2 className={styles.spinner} /></div>
+              <div className={styles.loadingContainer}><Loader2 className={styles.spinner} size={40} /></div>
             ) : (
-              <div className={styles.engagementGrid}>
-                {/* Recent Comments */}
-                <div className={styles.engagementColumn}>
-                  <h3 className={styles.columnTitle}><MessageSquare size={18} /> Recent Comments</h3>
-                  {engagement.comments.length === 0 ? (
-                    <p className={styles.emptyState}>No comments yet.</p>
-                  ) : (
-                    <ul className={styles.list}>
-                      {engagement.comments.map((comment) => (
-                        <li key={comment.id} className={styles.listItem}>
-                          <p className={styles.itemText}>
-                            <strong>{comment.user?.name || 'User'}</strong> commented on <em>{comment.wisdom?.title}</em>
-                          </p>
-                          <span className={styles.itemDate}>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+              <>
+                {/* Engagement Stats Cards */}
+                <div className={styles.statsGrid}>
+                  <div className={`${styles.statCard} ${styles.statCardBlue}`}>
+                    <div className={styles.statIcon}>
+                      <MessageSquare size={24} />
+                    </div>
+                    <div className={styles.statContent}>
+                      <div className={styles.statValue}>{engagement.comments.length}</div>
+                      <div className={styles.statLabel}>Recent Comments</div>
+                    </div>
+                  </div>
+                  
+                  <div className={`${styles.statCard} ${styles.statCardPink}`}>
+                    <div className={styles.statIcon}>
+                      <Heart size={24} />
+                    </div>
+                    <div className={styles.statContent}>
+                      <div className={styles.statValue}>{engagement.likes.length}</div>
+                      <div className={styles.statLabel}>Recent Likes</div>
+                    </div>
+                  </div>
+                  
+                  <div className={`${styles.statCard} ${styles.statCardGreen}`}>
+                    <div className={styles.statIcon}>
+                      <ThumbsUp size={24} />
+                    </div>
+                    <div className={styles.statContent}>
+                      <div className={styles.statValue}>{engagement.comments.length + engagement.likes.length}</div>
+                      <div className={styles.statLabel}>Total Interactions</div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Recent Likes */}
-                <div className={styles.engagementColumn}>
-                  <h3 className={styles.columnTitle}><Heart size={18} /> Recent Likes</h3>
-                  {engagement.likes.length === 0 ? (
-                    <p className={styles.emptyState}>No likes yet.</p>
+                {/* Engagement Timeline */}
+                <div className={styles.engagementTimeline}>
+                  <h3 className={styles.timelineTitle}><Eye size={20} /> Activity Timeline</h3>
+                  
+                  {engagement.comments.length === 0 && engagement.likes.length === 0 ? (
+                    <div className={styles.emptyStateCard}>
+                      <MessageSquare size={48} className={styles.emptyIcon} />
+                      <p className={styles.emptyText}>No recent engagement yet</p>
+                      <p className={styles.emptySubtext}>Share more wisdom to connect with your community!</p>
+                    </div>
                   ) : (
-                    <ul className={styles.list}>
-                      {engagement.likes.map((like) => (
-                        <li key={like.id} className={styles.listItem}>
-                          <p className={styles.itemText}>
-                            <strong>{like.user?.name || 'User'}</strong> liked <em>{like.wisdom?.title}</em>
-                          </p>
-                          <span className={styles.itemDate}>{new Date(like.createdAt).toLocaleDateString()}</span>
-                        </li>
+                    <div className={styles.timelineList}>
+                      {[...engagement.comments.map(c => ({...c, type: 'comment'})), 
+                        ...engagement.likes.map(l => ({...l, type: 'like'}))]
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                        .slice(0, 10)
+                        .map((item, index) => (
+                        <div key={`${item.type}-${item.id}`} className={styles.timelineItem}>
+                          <div className={`${styles.timelineIcon} ${item.type === 'comment' ? styles.timelineIconBlue : styles.timelineIconPink}`}>
+                            {item.type === 'comment' ? <MessageSquare size={16} /> : <Heart size={16} />}
+                          </div>
+                          <div className={styles.timelineContent}>
+                            <div className={styles.timelineUser}>{item.user?.name || 'User'}</div>
+                            <div className={styles.timelineAction}>
+                              {item.type === 'comment' ? 'commented on' : 'liked'} 
+                              <span className={styles.timelineWisdom}> {item.wisdom?.title}</span>
+                            </div>
+                            {item.type === 'comment' && item.content && (
+                              <div className={styles.timelineComment}>"{item.content.substring(0, 80)}{item.content.length > 80 ? '...' : ''}"</div>
+                            )}
+                            <div className={styles.timelineDate}>
+                              {new Date(item.createdAt).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   )}
                 </div>
-              </div>
+              </>
             )}
         </div>
       </div>

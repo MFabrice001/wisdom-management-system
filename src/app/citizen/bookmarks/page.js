@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Bookmark, Loader2, ArrowRight } from 'lucide-react';
+import { Bookmark, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function BookmarksPage() {
@@ -36,6 +36,7 @@ export default function BookmarksPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         <div className={styles.header}>
           <div className={styles.iconWrapper}>
             <Bookmark size={24} />

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link'; // Import Link
-import { MessageSquare, Plus, Loader2, Users, MessageCircle, X } from 'lucide-react';
+import { MessageSquare, Plus, Loader2, Users, MessageCircle, X, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
@@ -117,6 +117,7 @@ export default function ForumPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         <div className={styles.header}>
           <div>
             <h1 className={styles.title}>{t.title}</h1>

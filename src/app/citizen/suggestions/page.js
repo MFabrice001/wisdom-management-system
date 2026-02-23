@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Send, CheckCircle, Loader2, MessageSquare } from 'lucide-react';
+import { Send, CheckCircle, Loader2, MessageSquare, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import styles from './page.module.css'; // <-- Imported styles
 
 export default function SuggestionsPage() {
@@ -42,6 +43,7 @@ export default function SuggestionsPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         <div className={styles.header}>
           <div className={styles.iconCircle}>
              <MessageSquare className={styles.headerIcon} />

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { HelpCircle, Send, Loader2, CheckCircle } from 'lucide-react';
+import { HelpCircle, Send, Loader2, CheckCircle, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import styles from './page.module.css';
 
 export default function RequestsPage() {
@@ -45,6 +46,7 @@ export default function RequestsPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         <div className={styles.header}>
           <div className={styles.iconWrapper}>
             <HelpCircle size={32} className={styles.icon} />

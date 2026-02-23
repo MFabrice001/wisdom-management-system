@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Award, Star, Zap, Loader2, Lock, Download, BookOpen, Shield } from 'lucide-react';
+import { Award, Star, Zap, Loader2, Lock, Download, BookOpen, Shield, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import Link from 'next/link';
 import styles from './page.module.css';
 
 export default function BadgesPage() {
@@ -131,6 +132,7 @@ export default function BadgesPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         {/* Header / Stats */}
         <div className={styles.header}>
           <div>

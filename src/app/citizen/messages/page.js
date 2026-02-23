@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Mail, MessageCircle, User, Loader2, Send } from 'lucide-react';
+import { Mail, MessageCircle, User, Loader2, Send, ArrowLeft } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function MessagesPage() {
@@ -64,6 +64,7 @@ export default function MessagesPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         <div className={styles.header}>
           <h1 className={styles.title}>Messages</h1>
           <button 

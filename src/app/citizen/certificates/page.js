@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { FileText, Download, Award, Calendar } from 'lucide-react';
+import { FileText, Download, Award, Calendar, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import styles from './page.module.css';
 
 export default function CertificatesPage() {
@@ -60,6 +61,7 @@ export default function CertificatesPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+
         <div className={styles.header}>
           <FileText size={32} />
           <h1>My Certificates</h1>
