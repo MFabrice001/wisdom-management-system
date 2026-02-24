@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   LogIn, Mail, Lock, AlertCircle, Shield, 
-  User as UserIcon, BookOpen, Heart 
+  User as UserIcon, BookOpen, Heart, KeyRound 
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
@@ -14,10 +14,12 @@ import styles from './page.module.css';
 export default function LoginPage() {
   const router = useRouter();
   const { language } = useLanguage();
-  const [selectedRole, setSelectedRole] = useState('USER'); // Default to Citizen (USER)
+  const [selectedRole, setSelectedRole] = useState('USER');
+  const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    twoFactorCode: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,6 +31,8 @@ export default function LoginPage() {
       selectRole: 'Select Your Role',
       emailAddress: 'Email Address',
       password: 'Password',
+      twoFactorCode: 'Verification Code',
+      twoFactorSent: 'A verification code has been sent to your email',
       rememberMe: 'Remember me',
       forgotPassword: 'Forgot password?',
       signingIn: 'Signing In...',
@@ -48,7 +52,10 @@ export default function LoginPage() {
         invalidCredentials: 'Invalid email or password',
         noAdminPrivileges: 'You do not have admin privileges',
         notElder: 'This account is not registered as an Elder',
-        errorOccurred: 'An error occurred. Please try again.'
+        errorOccurred: 'An error occurred. Please try again.',
+        twoFactorRequired: 'Verification code required',
+        invalidTwoFactor: 'Invalid verification code',
+        twoFactorExpired: 'Verification code has expired'
       }
     },
     rw: {
@@ -57,6 +64,8 @@ export default function LoginPage() {
       selectRole: 'Hitamo Uruhare Rwawe',
       emailAddress: 'Aderesi ya Email',
       password: 'Ijambo Ryibanga',
+      twoFactorCode: 'Kode yo Kwemeza',
+      twoFactorSent: 'Kode yo kwemeza yoherejwe kuri email yawe',
       rememberMe: 'Nyibuke',
       forgotPassword: 'Wibagiwe ijambo ryibanga?',
       signingIn: 'Kwinjira...',
@@ -76,14 +85,16 @@ export default function LoginPage() {
         invalidCredentials: 'Email cyangwa ijambo ryibanga sibyo',
         noAdminPrivileges: 'Ntufite uburenganzira bw\'ubuyobozi',
         notElder: 'Iyi konti ntiyanditswe nk\'umusaza',
-        errorOccurred: 'Habaye ikosa. Ongera ugerageze.'
+        errorOccurred: 'Habaye ikosa. Ongera ugerageze.',
+        twoFactorRequired: 'Kode yo kwemeza irakenewe',
+        invalidTwoFactor: 'Kode yo kwemeza si nziza',
+        twoFactorExpired: 'Kode yo kwemeza yarangiye'
       }
     }
   };
 
   const t = translations[language];
 
-  // Role Configurations with Descriptions based on Use Cases
   const roles = [
     {
       id: 'USER',
@@ -91,7 +102,7 @@ export default function LoginPage() {
       icon: UserIcon,
       description: '',
       colorClass: styles.roleButtonUser,
-      registerLink: '/register', // Standard registration
+      registerLink: '/register',
       registerText: t.roles.USER.registerText
     },
     {
@@ -100,7 +111,7 @@ export default function LoginPage() {
       icon: BookOpen,
       description: '',
       colorClass: styles.roleButtonElder,
-      registerLink: '/register/elder', // Dedicated Elder application page
+      registerLink: '/register/elder',
       registerText: t.roles.ELDER.registerText
     },
     {
@@ -109,7 +120,7 @@ export default function LoginPage() {
       icon: Shield,
       description: '',
       colorClass: styles.roleButtonAdmin,
-      registerLink: null, // Admins usually created manually or via secret link
+      registerLink: null,
       registerText: t.roles.ADMIN.registerText
     }
   ];
@@ -127,27 +138,22 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    // 1. Basic Empty Field Check
     if (!formData.email || !formData.password) {
       setError(t.errors.fillBoth);
       setLoading(false);
       return;
     }
 
-    // 2. Strict Gmail Validation (Security Requirement)
     if (!formData.email.endsWith('@gmail.com')) {
       setError(t.errors.validGmail);
       setLoading(false);
       return;
     }
 
-    // 3. Strict Password Validation (Capital Letter + Number)
-    // This enforces the security policy on login attempts as well
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
     if (!passwordRegex.test(formData.password)) {
       setError(t.errors.passwordRequirements);
       setLoading(false);
-      // Clear password on validation failure to ensure it is not shown/persisted in state
       setFormData(prev => ({ ...prev, password: '' }));
       return;
     }
@@ -157,18 +163,23 @@ export default function LoginPage() {
         redirect: false,
         email: formData.email,
         password: formData.password,
+        twoFactorCode: formData.twoFactorCode,
       });
 
       if (result?.error) {
-        setError(t.errors.invalidCredentials);
-        // Clear password field on failed login attempt
-        setFormData(prev => ({ ...prev, password: '' }));
+        if (result.error === '2FA_REQUIRED') {
+          setShowTwoFactor(true);
+          setError('');
+        } else if (result.error.includes('verification code')) {
+          setError(result.error);
+        } else {
+          setError(t.errors.invalidCredentials);
+          setFormData(prev => ({ ...prev, password: '', twoFactorCode: '' }));
+        }
       } else {
-        // Fetch user details to verify role matches selected role
         const response = await fetch('/api/user/check-role');
         const data = await response.json();
         
-        // Role mismatch check
         if (data.role !== selectedRole && data.role !== 'ADMIN') {
           if (selectedRole === 'ADMIN' && data.role !== 'ADMIN') {
              setError(t.errors.noAdminPrivileges);
@@ -182,11 +193,10 @@ export default function LoginPage() {
           }
         }
         
-        // Redirect logic
         if (data.role === 'ADMIN') {
           router.push('/admin');
         } else if (data.role === 'ELDER') {
-          router.push('/elder/dashboard'); // Dedicated Elder Dashboard
+          router.push('/elder/dashboard');
         } else {
           router.push('/wisdom');
         }
@@ -194,8 +204,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       setError(t.errors.errorOccurred);
-       // Clear password field on error
-      setFormData(prev => ({ ...prev, password: '' }));
+      setFormData(prev => ({ ...prev, password: '', twoFactorCode: '' }));
     } finally {
       setLoading(false);
     }
@@ -206,7 +215,6 @@ export default function LoginPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        {/* Header */}
         <div className={styles.header}>
           <div className={styles.logoWrapper}>
             <LogIn size={32} color="white" />
@@ -215,7 +223,6 @@ export default function LoginPage() {
           <p className={styles.subtitle}>{t.signInTo}</p>
         </div>
 
-        {/* Role Selection Grid */}
         <div className={styles.roleSelection}>
           <p className={styles.roleLabel}>{t.selectRole}</p>
           <div className={styles.roleGrid}>
@@ -235,14 +242,19 @@ export default function LoginPage() {
               </button>
             ))}
           </div>
-          {/* Dynamic Description Box */}
           <div className={styles.roleDescriptionBox}>
             <p>{currentRoleConfig?.description}</p>
           </div>
         </div>
 
-        {/* Form Card */}
         <div className={styles.card}>
+          {showTwoFactor && selectedRole === 'ELDER' && (
+            <div className={styles.twoFactorNotice}>
+              <KeyRound className={styles.twoFactorIcon} size={20} />
+              <p>{t.twoFactorSent}</p>
+            </div>
+          )}
+
           {error && (
             <div className={styles.error}>
               <AlertCircle className={styles.errorIcon} size={20} />
@@ -263,8 +275,8 @@ export default function LoginPage() {
                   onChange={handleChange}
                   className={styles.input}
                   placeholder="name@gmail.com"
-                  disabled={loading}
-                  autoComplete="off" // Prevent browser autocomplete if desired
+                  disabled={loading || showTwoFactor}
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -281,11 +293,32 @@ export default function LoginPage() {
                   onChange={handleChange}
                   className={styles.input}
                   placeholder="••••••••"
-                  disabled={loading}
-                  autoComplete="off" // Prevent browser autocomplete if desired
+                  disabled={loading || showTwoFactor}
+                  autoComplete="off"
                 />
               </div>
             </div>
+
+            {showTwoFactor && selectedRole === 'ELDER' && (
+              <div className={styles.formGroup}>
+                <label htmlFor="twoFactorCode" className={styles.label}>{t.twoFactorCode}</label>
+                <div className={styles.inputWrapper}>
+                  <KeyRound className={styles.inputIcon} size={20} />
+                  <input
+                    id="twoFactorCode"
+                    name="twoFactorCode"
+                    type="text"
+                    value={formData.twoFactorCode}
+                    onChange={handleChange}
+                    className={styles.input}
+                    placeholder="123456"
+                    disabled={loading}
+                    maxLength={6}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className={styles.rememberRow}>
               <div className={styles.checkboxWrapper}>
@@ -320,7 +353,6 @@ export default function LoginPage() {
           </form>
 
           <div className={styles.footer}>
-            {/* DYNAMIC REGISTRATION LINK BASED ON ROLE */}
             {currentRoleConfig?.registerLink ? (
               <p className={styles.footerText}>
                 {t.newHere}{' '}

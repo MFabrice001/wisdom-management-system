@@ -108,6 +108,13 @@ export default function ElderApplicationPage() {
       return;
     }
 
+    // Residence validation
+    if (formData.residence.length < 5) {
+      setError('Please enter full residence (District, Sector)');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/elder-application', {
         method: 'POST',

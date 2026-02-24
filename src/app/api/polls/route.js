@@ -82,9 +82,25 @@ export async function POST(request) {
     console.log('Creating poll:', { question, options, endDate });
 
     // Validation
-    if (!question || !options || options.length < 2) {
+    if (!question || !question.trim()) {
       return NextResponse.json(
-        { error: 'Question and at least 2 options are required' },
+        { error: 'Question is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!options || !Array.isArray(options) || options.length < 2) {
+      return NextResponse.json(
+        { error: 'At least 2 options are required' },
+        { status: 400 }
+      );
+    }
+
+    // Filter out empty options
+    const validOptions = options.filter(opt => opt && opt.trim());
+    if (validOptions.length < 2) {
+      return NextResponse.json(
+        { error: 'At least 2 valid options are required' },
         { status: 400 }
       );
     }
@@ -97,7 +113,8 @@ export async function POST(request) {
     }
 
     // Check if end date is in the future
-    if (new Date(endDate) <= new Date()) {
+    const endDateTime = new Date(endDate);
+    if (endDateTime <= new Date()) {
       return NextResponse.json(
         { error: 'End date must be in the future' },
         { status: 400 }
@@ -105,13 +122,13 @@ export async function POST(request) {
     }
 
     // Format options for JSON storage
-    const formattedOptions = options.map(text => ({ text, votes: 0 }));
+    const formattedOptions = validOptions.map(text => ({ text: text.trim() }));
 
     const poll = await prisma.poll.create({
       data: {
-        question,
-        options: formattedOptions, // Store as JSON
-        endDate: new Date(endDate),
+        question: question.trim(),
+        options: formattedOptions,
+        endDate: endDateTime,
         createdBy: session.user.id,
         isActive: true
       }

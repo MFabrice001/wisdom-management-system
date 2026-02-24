@@ -19,23 +19,34 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
     }
 
-    // Create elder application record
-    const application = await prisma.elderApplication.create({
+    // Create user first
+    const user = await prisma.user.create({
       data: {
         name,
         email,
+        password: 'temp_password', // Will be set later
         nationalId,
         residence,
         gender,
+        role: 'USER' // Will be upgraded to ELDER if approved
+      }
+    });
+
+    // Create elder request
+    const elderRequest = await prisma.elderRequest.create({
+      data: {
+        userId: user.id,
+        reason: `Elder application for ${name}`,
+        experience: `Application submitted via elder registration form`,
         cvUrl,
-        documentUrl,
+        documentsUrl: [documentUrl],
         status: 'PENDING'
       }
     });
 
     return NextResponse.json({ 
       message: 'Application submitted successfully',
-      applicationId: application.id 
+      applicationId: elderRequest.id 
     });
   } catch (error) {
     console.error('Error creating elder application:', error);

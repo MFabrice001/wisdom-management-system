@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Users, BookOpen, MessageCircle, Heart, TrendingUp, Award,
-  ArrowUpRight, Loader2, Settings, BarChart3, RefreshCw, FileText, Eye, Calendar, Lightbulb
+  ArrowUpRight, Loader2, Settings, BarChart3, RefreshCw, FileText, Eye, Calendar, Lightbulb, UserCheck, X, Check
 } from 'lucide-react';
 import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import { useLanguage } from '@/context/LanguageContext';
@@ -19,6 +19,10 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [elderRequests, setElderRequests] = useState([]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [requestHistory, setRequestHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -33,13 +37,28 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       setRefreshing(true);
-      const response = await fetch('/api/admin/analytics');
-      if (response.ok) {
-        const data = await response.json();
+      const [analyticsRes, elderRequestsRes, historyRes] = await Promise.all([
+        fetch('/api/admin/analytics'),
+        fetch('/api/admin/elder-requests'),
+        fetch('/api/admin/elder-requests?status=APPROVED,REJECTED')
+      ]);
+      
+      if (analyticsRes.ok) {
+        const data = await analyticsRes.json();
         setAnalytics(data);
       }
+      
+      if (elderRequestsRes.ok) {
+        const data = await elderRequestsRes.json();
+        setElderRequests(data.requests || []);
+      }
+      
+      if (historyRes.ok) {
+        const data = await historyRes.json();
+        setRequestHistory(data.requests || []);
+      }
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,6 +67,23 @@ export default function AdminDashboard() {
 
   const handleRefresh = async () => {
     await fetchStats();
+  };
+
+  const handleElderRequest = async (userId, action) => {
+    try {
+      const response = await fetch('/api/admin/elder-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action })
+      });
+      
+      if (response.ok) {
+        setElderRequests(prev => prev.filter(req => req.user.id !== userId));
+        setSelectedRequest(null);
+      }
+    } catch (error) {
+      console.error('Error handling elder request:', error);
+    }
   };
 
   if (loading || status === 'loading') {
@@ -162,6 +198,13 @@ export default function AdminDashboard() {
                   link="/admin/reports"
                   color="#ec4899"
                 />
+                <ActionCard
+                  icon={UserCheck}
+                  title="Elder History"
+                  description="View processed requests"
+                  onClick={() => setShowHistory(true)}
+                  color="#8b5cf6"
+                />
               </div>
             </div>
 
@@ -194,8 +237,22 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Sidebar Column: Top Contributors & Categories */}
+          {/* Sidebar Column: Elder Requests, Top Contributors & Categories */}
           <div className="space-y-8">
+            {/* Elder Requests */}
+            {elderRequests.length > 0 && (
+              <div className={styles.section} style={{ marginBottom: '0' }}>
+                <h2 className={styles.sectionTitle} style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+                  <UserCheck size={20} />
+                  Elder Requests ({elderRequests.length})
+                </h2>
+                <div className={styles.wisdomList} style={{ gap: '0.75rem' }}>
+                  {elderRequests.map((request) => (
+                    <ElderRequestCard key={request.id} request={request} onAction={handleElderRequest} onView={setSelectedRequest} />
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Top Contributors */}
             {analytics?.topContributors && analytics.topContributors.length > 0 && (
               <div className={styles.section} style={{ marginBottom: '0' }}>
@@ -227,6 +284,21 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+        
+        {showHistory && (
+          <HistoryModal 
+            history={requestHistory}
+            onClose={() => setShowHistory(false)}
+          />
+        )}
+        
+        {selectedRequest && (
+          <ElderRequestModal 
+            request={selectedRequest} 
+            onClose={() => setSelectedRequest(null)}
+            onAction={handleElderRequest}
+          />
+        )}
       </div>
     </div>
   );
@@ -334,6 +406,301 @@ function CategoryCard({ category, count, views }) {
       <p className={styles.categoryName} style={{ fontSize: '0.8rem', marginBottom: '0.25rem' }}>{formatCategory(category)}</p>
       <p className={styles.categoryCount} style={{ fontSize: '1.25rem' }}>{count}</p>
       <p style={{ fontSize: '0.7rem', color: '#6b7280' }}>{views || 0} views</p>
+    </div>
+  );
+}
+
+// Elder Request Card Component
+function ElderRequestCard({ request, onAction, onView }) {
+  return (
+    <div className={styles.wisdomCard} style={{ padding: '1rem', gap: '1rem' }}>
+      <div className={styles.wisdomContent}>
+        <h4 className={styles.wisdomTitle} style={{ fontSize: '0.95rem', marginBottom: '0.25rem' }}>{request.user.name}</h4>
+        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>{request.user.email}</p>
+        <div className={styles.wisdomStats} style={{ gap: '1rem', fontSize: '0.75rem' }}>
+          <span>
+            <BookOpen size={12} />
+            {request.user._count?.wisdoms || 0} wisdoms
+          </span>
+          <span>
+            <MessageCircle size={12} />
+            {request.user._count?.comments || 0} comments
+          </span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <button 
+          onClick={() => onView(request)}
+          style={{ 
+            padding: '0.5rem', 
+            background: '#3b82f6', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '0.375rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            fontSize: '0.75rem'
+          }}
+        >
+          <Eye size={14} />
+          View
+        </button>
+        <button 
+          onClick={() => onAction(request.user.id, 'approve')}
+          style={{ 
+            padding: '0.5rem', 
+            background: '#22c55e', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '0.375rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            fontSize: '0.75rem'
+          }}
+        >
+          <Check size={14} />
+          Approve
+        </button>
+        <button 
+          onClick={() => onAction(request.user.id, 'deny')}
+          style={{ 
+            padding: '0.5rem', 
+            background: '#ef4444', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '0.375rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            fontSize: '0.75rem'
+          }}
+        >
+          <X size={14} />
+          Deny
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// History Modal Component
+function HistoryModal({ history, onClose }) {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '0.5rem',
+        padding: '2rem',
+        maxWidth: '800px',
+        width: '90%',
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Elder Request History</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <X size={24} />
+          </button>
+        </div>
+        
+        {history.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#6b7280' }}>No processed requests yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {history.map((request) => (
+              <div key={request.id} style={{
+                padding: '1rem',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h4 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{request.user.name}</h4>
+                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>{request.user.email}</p>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                    Reviewed: {new Date(request.reviewedAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  backgroundColor: request.status === 'APPROVED' ? '#22c55e' : '#ef4444'
+                }}>
+                  {request.status === 'APPROVED' ? 'Approved' : 'Denied'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Elder Request Modal Component
+function ElderRequestModal({ request, onClose, onAction }) {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '0.5rem',
+        padding: '2rem',
+        maxWidth: '600px',
+        width: '90%',
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Elder Application Details</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <X size={24} />
+          </button>
+        </div>
+        
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Applicant Information</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div>
+              <strong>Name:</strong> {request.user.name}
+            </div>
+            <div>
+              <strong>Email:</strong> {request.user.email}
+            </div>
+            <div>
+              <strong>National ID:</strong> {request.user.nationalId}
+            </div>
+            <div>
+              <strong>Residence:</strong> {request.user.residence}
+            </div>
+            <div>
+              <strong>Gender:</strong> {request.user.gender}
+            </div>
+          </div>
+          
+          <div style={{ marginBottom: '1rem' }}>
+            <strong>Reason:</strong>
+            <p style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: '#f3f4f6', borderRadius: '0.375rem' }}>
+              {request.reason}
+            </p>
+          </div>
+        </div>
+        
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Documents</h3>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {request.cvUrl && (
+              <a 
+                href={request.cvUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: '0.375rem'
+                }}
+              >
+                <FileText size={16} />
+                View CV
+              </a>
+            )}
+            {request.documentsUrl && request.documentsUrl.map((doc, idx) => (
+              <a 
+                key={idx}
+                href={doc} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem',
+                  backgroundColor: '#6366f1',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: '0.375rem'
+                }}
+              >
+                <FileText size={16} />
+                Document {idx + 1}
+              </a>
+            ))}
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+          <button 
+            onClick={() => { onAction(request.user.id, 'deny'); onClose(); }}
+            style={{ 
+              padding: '0.75rem 1.5rem', 
+              background: '#ef4444', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <X size={16} />
+            Deny Application
+          </button>
+          <button 
+            onClick={() => { onAction(request.user.id, 'approve'); onClose(); }}
+            style={{ 
+              padding: '0.75rem 1.5rem', 
+              background: '#22c55e', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <Check size={16} />
+            Approve Application
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

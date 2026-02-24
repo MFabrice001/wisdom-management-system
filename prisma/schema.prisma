@@ -19,11 +19,16 @@ model User {
   // Fields for Elder Registration
   nationalId   String?      @unique
   residence    String?
+  gender       String?
   isVerified   Boolean      @default(false)
 
   // Fields for Password Reset (CRITICAL ADDITION)
   resetToken       String?   @unique
   resetTokenExpiry DateTime?
+  
+  // Two-Factor Authentication for Elders
+  twoFactorCode    String?
+  twoFactorExpiry  DateTime?
   
   // Force password change on first login
   requirePasswordChange Boolean @default(false)
