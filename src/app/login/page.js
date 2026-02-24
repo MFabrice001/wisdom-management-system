@@ -100,7 +100,7 @@ export default function LoginPage() {
       icon: BookOpen,
       description: '',
       colorClass: styles.roleButtonElder,
-      registerLink: '/register?role=ELDER', // Dedicated Elder registration link
+      registerLink: '/register/elder', // Dedicated Elder application page
       registerText: t.roles.ELDER.registerText
     },
     {
