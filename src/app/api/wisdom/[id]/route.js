@@ -98,3 +98,42 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+// DELETE - Delete wisdom entry
+export async function DELETE(request, { params }) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = params;
+
+    const wisdom = await prisma.wisdom.findUnique({
+      where: { id },
+      select: { authorId: true }
+    });
+
+    if (!wisdom) {
+      return NextResponse.json({ error: 'Wisdom not found' }, { status: 404 });
+    }
+
+    // Check if user is the author or admin
+    if (wisdom.authorId !== session.user.id && session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    await prisma.wisdom.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ message: 'Wisdom deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting wisdom:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete wisdom' },
+      { status: 500 }
+    );
+  }
+}

@@ -83,7 +83,7 @@ function WisdomLibraryPageContent() {
     'MARRIAGE_GUIDANCE',
     'AGRICULTURE',
     'CONFLICT_RESOLUTION',
-    'HEALTH_WELLNESS',
+    'RWANDAN_HISTORY',
     'MORAL_CONDUCT',
     'TRADITIONAL_CEREMONIES',
     'PROVERBS',
@@ -327,6 +327,22 @@ function WisdomCard({ wisdom, onShare }) {
 
   return (
     <Link href={`/wisdom/${wisdom.id}`} className={styles.wisdomCard}>
+      {/* Featured Image */}
+      {wisdom.images && wisdom.images.length > 0 && (
+        <div className={styles.cardImageWrapper}>
+          <img 
+            src={wisdom.images[0]} 
+            alt={wisdom.title}
+            className={styles.cardImage}
+          />
+          {wisdom.images.length > 1 && (
+            <div className={styles.imageCount}>
+              +{wisdom.images.length - 1}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className={styles.cardHeader}>
         <span className={styles.categoryBadge}>

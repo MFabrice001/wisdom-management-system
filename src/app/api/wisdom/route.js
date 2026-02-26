@@ -69,8 +69,8 @@ export async function POST(request) {
     const category = formData.get('category');
     const language = formData.get('language');
     const tags = formData.get('tags') ? JSON.parse(formData.get('tags')) : [];
+    const images = formData.get('images') ? JSON.parse(formData.get('images')) : [];
     const audioUrl = formData.get('audioUrl');
-    const imageUrl = formData.get('imageUrl');
     const documentFile = formData.get('document');
 
     // Validation
@@ -113,8 +113,8 @@ export async function POST(request) {
         category,
         language: language || 'KINYARWANDA',
         tags: tags || [],
+        images: images || [],
         audioUrl: audioUrl || null,
-        imageUrl: imageUrl || null,
         documentUrl: documentUrl,
         authorId: session.user.id,
         isPublished: true

@@ -22,9 +22,10 @@ export default function AddWisdomPage() {
     language: 'KINYARWANDA',
     tags: [],
     audioUrl: '',
-    imageUrl: '',
+    images: [],
     documentFile: null,
   });
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function AddWisdomPage() {
     { value: 'MARRIAGE_GUIDANCE', label: 'Marriage Guidance' },
     { value: 'AGRICULTURE', label: 'Agriculture' },
     { value: 'CONFLICT_RESOLUTION', label: 'Conflict Resolution' },
-    { value: 'HEALTH_WELLNESS', label: 'Health & Wellness' },
+    { value: 'RWANDAN_HISTORY', label: 'Rwandan History' },
     { value: 'MORAL_CONDUCT', label: 'Moral Conduct' },
     { value: 'TRADITIONAL_CEREMONIES', label: 'Traditional Ceremonies' },
     { value: 'PROVERBS', label: 'Proverbs' },
@@ -85,6 +86,54 @@ export default function AddWisdomPage() {
       });
       setError('');
     }
+  };
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select only image files');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Each image must be less than 5MB');
+        return;
+      }
+    }
+
+    setUploadingImages(true);
+    const uploadFormData = new FormData();
+    files.forEach(file => uploadFormData.append('files', file));
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, ...data.urls]
+        }));
+      } else {
+        setError('Failed to upload images');
+      }
+    } catch (error) {
+      setError('Error uploading images');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    setFormData({
+      ...formData,
+      images: formData.images.filter((_, i) => i !== index)
+    });
   };
 
   const handleRemoveFile = () => {
@@ -140,7 +189,7 @@ export default function AddWisdomPage() {
       const submitData = new FormData();
       
       Object.keys(formData).forEach(key => {
-        if (key === 'tags') {
+        if (key === 'tags' || key === 'images') {
           submitData.append(key, JSON.stringify(formData[key]));
         } else if (key === 'documentFile' && formData[key]) {
           submitData.append('document', formData[key]);
@@ -406,22 +455,45 @@ export default function AddWisdomPage() {
               <p className={styles.helpText}>Upload a PDF or Word document with additional details</p>
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div className={styles.formGroup}>
-              <label htmlFor="imageUrl" className={styles.label}>
-                Image URL (Optional)
+              <label className={styles.label}>
+                Images (Optional)
               </label>
-              <input
-                id="imageUrl"
-                name="imageUrl"
-                type="url"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                className={styles.input}
-                placeholder="https://example.com/image.jpg"
-                disabled={loading || success}
-              />
-              <p className={styles.helpText}>Link to a relevant image</p>
+              <div className={styles.fileUpload}>
+                <input
+                  type="file"
+                  id="imageFiles"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className={styles.fileInput}
+                  disabled={loading || success || uploadingImages}
+                />
+                <label htmlFor="imageFiles" className={styles.fileLabel}>
+                  <Upload size={20} />
+                  <span>{uploadingImages ? 'Uploading...' : 'Upload Images'}</span>
+                  <small>JPG, PNG, GIF (Max 5MB each)</small>
+                </label>
+              </div>
+              {formData.images.length > 0 && (
+                <div className={styles.imagePreviewGrid}>
+                  {formData.images.map((url, index) => (
+                    <div key={index} className={styles.imagePreview}>
+                      <img src={url} alt={`Preview ${index + 1}`} className={styles.previewImg} />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className={styles.removeImageBtn}
+                        disabled={loading || success}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className={styles.helpText}>Upload images to make your wisdom more engaging</p>
             </div>
 
             {/* Buttons */}

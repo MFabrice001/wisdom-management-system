@@ -95,7 +95,7 @@ export default function Home() {
           { label: 'Marriage Guidance', id: 'MARRIAGE_GUIDANCE' },
           { label: 'Agriculture', id: 'AGRICULTURE' },
           { label: 'Conflict Resolution', id: 'CONFLICT_RESOLUTION' },
-          { label: 'Health & Wellness', id: 'HEALTH_WELLNESS' },
+          { label: 'Rwandan History', id: 'RWANDAN_HISTORY' },
           { label: 'Moral Conduct', id: 'MORAL_CONDUCT' },
           { label: 'Traditional Ceremonies', id: 'TRADITIONAL_CEREMONIES' },
           { label: 'Proverbs', id: 'PROVERBS' },
@@ -184,7 +184,7 @@ export default function Home() {
           { label: 'Ubufasha mu Bukwe', id: 'MARRIAGE_GUIDANCE' },
           { label: 'Ubuhinzi', id: 'AGRICULTURE' },
           { label: 'Gukemura Amakimbirane', id: 'CONFLICT_RESOLUTION' },
-          { label: 'Ubuzima n\'Isuku', id: 'HEALTH_WELLNESS' },
+          { label: 'Amateka y\'u Rwanda', id: 'RWANDAN_HISTORY' },
           { label: 'Imyifatire Myiza', id: 'MORAL_CONDUCT' },
           { label: 'Imihango y\'Umuco', id: 'TRADITIONAL_CEREMONIES' },
           { label: 'Imigani', id: 'PROVERB' },
@@ -235,7 +235,7 @@ export default function Home() {
   const featureIcons = [Library, Users, Globe2, Heart, Zap, Star];
   
   // Updated category icons with modern emojis
-  const categoryIcons = ['💍', '🌱', '🤝', '🏥', '⚖️', '🎭', '💬', '📚', '💡', '🏘️'];
+  const categoryIcons = ['💍', '🌱', '🤝', '📜', '⚖️', '🎭', '💬', '📚', '💡', '🏘️'];
 
   return (
     <div className={styles.page}>

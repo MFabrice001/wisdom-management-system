@@ -78,7 +78,7 @@ model Wisdom {
   category    Category
   language    Language  @default(KINYARWANDA)
   audioUrl    String?
-  imageUrl    String?
+  images      String[]  @default([])
   documentUrl String?
   tags        String[]
   views       Int       @default(0)
@@ -313,7 +313,7 @@ enum Category {
   MARRIAGE_GUIDANCE
   AGRICULTURE
   CONFLICT_RESOLUTION
-  HEALTH_WELLNESS
+  RWANDAN_HISTORY
   MORAL_CONDUCT
   TRADITIONAL_CEREMONIES
   PROVERBS

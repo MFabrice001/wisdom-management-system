@@ -254,16 +254,46 @@ export default function WisdomDetailPage({ params }) {
               </div>
             )}
 
-            {/* Image */}
-            {wisdom.imageUrl && (
-              <div className={styles.imageContainer}>
-                <img
-                  src={wisdom.imageUrl}
-                  alt={wisdom.title}
-                  className={styles.wisdomImage}
-                />
+            {/* Book-like Content with Images */}
+            <div className={styles.bookContent}>
+              {/* Opening Quote */}
+              <div className={styles.openingQuote}>
+                <span className={styles.quoteIcon}>"</span>
               </div>
-            )}
+
+              {/* Main Text */}
+              <div className={styles.prose}>
+                {wisdom.content.split('\n').map((line, index) => (
+                  line.trim() === '' ? (
+                    <br key={index} />
+                  ) : (
+                    <p key={index} className={styles.paragraph}>{line}</p>
+                  )
+                ))}
+              </div>
+
+              {/* Images Gallery */}
+              {wisdom.images && wisdom.images.length > 0 && (
+                <div className={styles.imagesGallery}>
+                  {wisdom.images.map((imageUrl, index) => (
+                    <div key={index} className={styles.imageWrapper}>
+                      <img
+                        src={imageUrl}
+                        alt={`${wisdom.title} - Image ${index + 1}`}
+                        className={styles.wisdomImage}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Closing Decoration */}
+              <div className={styles.closingDecoration}>
+                <span className={styles.decorativeLine}></span>
+                <span className={styles.decorativeSymbol}>✦</span>
+                <span className={styles.decorativeLine}></span>
+              </div>
+            </div>
 
             {/* Document */}
             {wisdom.documentUrl && (
@@ -286,10 +316,6 @@ export default function WisdomDetailPage({ params }) {
                 </div>
               </div>
             )}
-
-            <div className={styles.prose}>
-              <p>{wisdom.content}</p>
-            </div>
 
             {/* Tags */}
             {wisdom.tags && wisdom.tags.length > 0 && (
@@ -324,9 +350,11 @@ export default function WisdomDetailPage({ params }) {
             </div>
 
             <div className={styles.actionsRight}>
-              {/* Delete Button - Only for Elders/Admins who own the wisdom */}
-              {session && (session.user.role === 'ELDER' || session.user.role === 'ADMIN') && 
-               wisdom.authorId === session.user.id && (
+              {/* Delete Button - Only for Elders/Admins who own the wisdom OR Admins */}
+              {session && (
+                (session.user.role === 'ADMIN') || 
+                ((session.user.role === 'ELDER' || session.user.role === 'ADMIN') && wisdom.authorId === session.user.id)
+              ) && (
                 <button
                   onClick={handleDeleteClick}
                   className={styles.deleteButton}
