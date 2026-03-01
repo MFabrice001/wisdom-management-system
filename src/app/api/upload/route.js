@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { put } from '@vercel/blob';
 
 export async function POST(request) {
   try {
@@ -11,35 +10,27 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No files uploaded' }, { status: 400 });
     }
 
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    
-    // Create uploads directory if it doesn't exist
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-
     const urls = [];
 
     for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      // 5MB limit check
+      if (file.size > 5 * 1024 * 1024) { 
         return NextResponse.json({ error: 'File size too large' }, { status: 400 });
       }
 
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+      // Upload directly to Vercel Blob
+      // (Vercel automatically adds a unique random string to the filename so they never overwrite)
+      const blob = await put(file.name, file, {
+        access: 'public',
+      });
 
-      // Generate unique filename
-      const timestamp = Date.now();
-      const filename = `${timestamp}-${file.name}`;
-      const filepath = join(uploadDir, filename);
-
-      await writeFile(filepath, buffer);
-      urls.push(`/uploads/${filename}`);
+      // Push the secure cloud URL to the array
+      urls.push(blob.url);
     }
 
+    // Return the URLs exactly how your frontend expects them
     return NextResponse.json({ urls });
+    
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
