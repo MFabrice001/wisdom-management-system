@@ -462,11 +462,11 @@ export default function ReportsPage() {
                 <div className={styles.footerRow}>
                   <div className={styles.footerLeft}>
                     <div className={styles.footerItem}>
-                      <span className={styles.footerLabel}>System Administrator</span>
+                      <span className={styles.footerLabel}>Delived by System Administrator</span>
                     </div>
-                    <div className={styles.footerItem}>
+                    {/* <div className={styles.footerItem}>
                       <span className={styles.footerLabel}>Wisdom Management System</span>
-                    </div>
+                    </div> */}
                     <div className={styles.footerItem}>
                       <span className={styles.footerLabel}>Date: {new Date().toLocaleDateString()}</span>
                     </div>
@@ -475,11 +475,11 @@ export default function ReportsPage() {
                     <div className={styles.footerItem}>
                       <span className={styles.footerValue}>Musengimana Fabrice</span>
                     </div>
-                    <div className={styles.footerItem}>
+                    {/* <div className={styles.footerItem}>
                       <span className={styles.footerValue}>Wisdom Preservation</span>
-                    </div>
+                    </div> */}
                     <div className={styles.footerItem}>
-                      <span className={styles.footerValue}>Signature: _______________</span>
+                      <span className={styles.footerValue}>Signature: </span>
                     </div>
                   </div>
                 </div>

@@ -18,7 +18,8 @@ export async function GET(request) {
         _count: {
           select: {
             wisdoms: true,
-            comments: true
+            comments: true,
+            forumReplies: true
           }
         },
         wisdoms: {
@@ -33,13 +34,17 @@ export async function GET(request) {
       }
     });
 
-    // Calculate total likes for each contributor
+    // Calculate total likes and total comments for each contributor
     const contributorsWithLikes = contributors.map(contributor => ({
       ...contributor,
       totalLikes: contributor.wisdoms.reduce(
         (sum, wisdom) => sum + wisdom._count.likes,
         0
       ),
+      _count: {
+        wisdoms: contributor._count.wisdoms,
+        comments: contributor._count.comments + contributor._count.forumReplies
+      },
       wisdoms: undefined // Remove wisdoms array from response
     }));
 
