@@ -397,3 +397,49 @@
   margin-bottom: 0.75rem;
   font-size: 0.875rem;
 }
+
+.userDetail {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0.25rem 0;
+}
+
+.categoryQualifications {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 0.375rem;
+}
+
+.categoryTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.5rem;
+}
+
+.compactRequirementsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.compactRequirementsList li {
+  padding: 0.125rem 0;
+  font-size: 0.8rem;
+  color: #92400e;
+  position: relative;
+  padding-left: 0.75rem;
+}
+
+.compactRequirementsList li:before {
+  content: '•';
+  color: #d97706;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}

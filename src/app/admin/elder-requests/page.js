@@ -100,6 +100,24 @@ export default function ElderRequestsPage() {
                   <div className={styles.userInfo}>
                     <h3 className={styles.userName}>{request.user.name}</h3>
                     <p className={styles.userEmail}>{request.user.email}</p>
+                    <p className={styles.userDetail}>National ID: {request.user.nationalId}</p>
+                    <p className={styles.userDetail}>Residence: {request.user.residence}</p>
+                    <p className={styles.userDetail}>Gender: {request.user.gender}</p>
+                    
+                    {/* Category Qualifications Reference */}
+                    {request.category && (
+                      <div className={styles.categoryQualifications}>
+                        <h4 className={styles.categoryTitle}>
+                          <BookOpen size={16} />
+                          {CATEGORY_QUALIFICATIONS[request.category]?.name.en} Requirements:
+                        </h4>
+                        <ul className={styles.compactRequirementsList}>
+                          {CATEGORY_QUALIFICATIONS[request.category]?.requiredQualifications.en.map((req, index) => (
+                            <li key={index}>{req}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                   <span className={`${styles.badge} ${styles[request.status.toLowerCase()]}`}>
                     {request.status === 'PENDING' && <Clock size={14} />}
