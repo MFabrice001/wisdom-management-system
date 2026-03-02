@@ -110,73 +110,91 @@ export default function ElderRequestsPage() {
                 </div>
 
                 <div className={styles.cardBody}>
+                  {/* Category Application Details Section */}
                   {request.category && (
-                    <div className={styles.field}>
-                      <strong>Applied Category:</strong>
-                      <div className={styles.categoryInfo}>
-                        <BookOpen size={16} className={styles.categoryIcon} />
-                        <span>{CATEGORY_QUALIFICATIONS[request.category]?.name.en || request.category}</span>
+                    <div className={styles.categorySection}>
+                      <h4 className={styles.sectionTitle}>
+                        <BookOpen size={18} />
+                        Category Application Details
+                      </h4>
+                      
+                      <div className={styles.field}>
+                        <strong>Applied Category:</strong>
+                        <div className={styles.categoryInfo}>
+                          <BookOpen size={16} className={styles.categoryIcon} />
+                          <span>{CATEGORY_QUALIFICATIONS[request.category]?.name.en || request.category}</span>
+                        </div>
+                      </div>
+                      
+                      <div className={styles.field}>
+                        <strong>Category Requirements:</strong>
+                        <div className={styles.requirementsBox}>
+                          <ul className={styles.requirementsList}>
+                            {CATEGORY_QUALIFICATIONS[request.category]?.requiredQualifications.en.map((req, index) => (
+                              <li key={index}>{req}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                      
+                      <div className={styles.field}>
+                        <strong>Applicant's Qualifications:</strong>
+                        <div className={styles.qualificationsBox}>
+                          <GraduationCap size={16} className={styles.qualIcon} />
+                          <p>{request.qualifications}</p>
+                        </div>
                       </div>
                     </div>
                   )}
                   
-                  {request.category && (
+                  {/* Application Details Section */}
+                  <div className={styles.applicationSection}>
+                    <h4 className={styles.sectionTitle}>
+                      <UserCheck size={18} />
+                      Application Details
+                    </h4>
+                    
                     <div className={styles.field}>
-                      <strong>Required Qualifications:</strong>
-                      <div className={styles.requirementsBox}>
-                        <ul className={styles.requirementsList}>
-                          {CATEGORY_QUALIFICATIONS[request.category]?.requiredQualifications.en.map((req, index) => (
-                            <li key={index}>{req}</li>
-                          ))}
-                        </ul>
-                      </div>
+                      <strong>Reason:</strong>
+                      <p>{request.reason}</p>
                     </div>
-                  )}
-                  
-                  {request.qualifications && (
                     <div className={styles.field}>
-                      <strong>Applicant's Qualifications:</strong>
-                      <div className={styles.qualificationsBox}>
-                        <GraduationCap size={16} className={styles.qualIcon} />
-                        <p>{request.qualifications}</p>
-                      </div>
+                      <strong>Experience:</strong>
+                      <p>{request.experience}</p>
                     </div>
-                  )}
-                  
-                  <div className={styles.field}>
-                    <strong>Reason:</strong>
-                    <p>{request.reason}</p>
-                  </div>
-                  <div className={styles.field}>
-                    <strong>Experience:</strong>
-                    <p>{request.experience}</p>
-                  </div>
-                  {request.cvUrl && (
-                    <div className={styles.field}>
-                      <strong>CV:</strong>
-                      <a href={request.cvUrl} target="_blank" rel="noopener noreferrer" className={styles.documentLink}>
-                        View CV
-                      </a>
-                    </div>
-                  )}
-                  {request.documentsUrl && request.documentsUrl.length > 0 && (
-                    <div className={styles.field}>
-                      <strong>Supporting Documents:</strong>
-                      <div className={styles.documentLinks}>
-                        {request.documentsUrl.map((url, index) => (
-                          <a key={index} href={url} target="_blank" rel="noopener noreferrer" className={styles.documentLink}>
-                            Document {index + 1}
+                    
+                    {/* Documents Section */}
+                    <div className={styles.documentsSection}>
+                      <h5 className={styles.subSectionTitle}>Submitted Documents</h5>
+                      {request.cvUrl && (
+                        <div className={styles.field}>
+                          <strong>CV:</strong>
+                          <a href={request.cvUrl} target="_blank" rel="noopener noreferrer" className={styles.documentLink}>
+                            📄 View CV
                           </a>
-                        ))}
-                      </div>
+                        </div>
+                      )}
+                      {request.documentsUrl && request.documentsUrl.length > 0 && (
+                        <div className={styles.field}>
+                          <strong>Supporting Documents ({request.documentsUrl.length}):</strong>
+                          <div className={styles.documentLinks}>
+                            {request.documentsUrl.map((url, index) => (
+                              <a key={index} href={url} target="_blank" rel="noopener noreferrer" className={styles.documentLink}>
+                                📎 Document {index + 1}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {request.certificates.length > 0 && (
+                        <div className={styles.field}>
+                          <strong>Additional Certificates:</strong>
+                          <p>{request.certificates.join(', ')}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {request.certificates.length > 0 && (
-                    <div className={styles.field}>
-                      <strong>Certificates:</strong>
-                      <p>{request.certificates.join(', ')}</p>
-                    </div>
-                  )}
+                  </div>
+                  
                   <div className={styles.meta}>
                     <span>Applied: {new Date(request.createdAt).toLocaleDateString()}</span>
                   </div>
