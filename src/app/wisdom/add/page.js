@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, AlertCircle, CheckCircle, Loader2, X, Upload, FileText } from 'lucide-react';
-import styles from './page.module.css';
 
 export default function AddWisdomPage() {
   const { data: session, status, update } = useSession();
@@ -28,23 +27,16 @@ export default function AddWisdomPage() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [userApprovedCategory, setUserApprovedCategory] = useState(null);
 
-  // Redirect if not logged in and fetch user's approved category
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user) {
-      console.log('Session user:', session.user); // Debug log
-      // Set approved category for elders
       if (session.user.role === 'ELDER' && session.user.approvedCategory) {
-        console.log('Elder approved category:', session.user.approvedCategory); // Debug log
         setUserApprovedCategory(session.user.approvedCategory);
         setFormData(prev => ({ ...prev, category: session.user.approvedCategory }));
       } else if (session.user.role === 'ELDER' && !session.user.approvedCategory) {
-        // Elder without approved category - fetch fresh data
-        console.log('Elder has no approved category in session, fetching fresh data'); // Debug log
         fetchFreshUserData();
       } else if (session.user.role !== 'ELDER') {
-        // Non-elders can use any category, set default
         setFormData(prev => ({ ...prev, category: 'PROVERBS' }));
       }
     }
@@ -55,11 +47,9 @@ export default function AddWisdomPage() {
       const res = await fetch('/api/user/refresh-session');
       if (res.ok) {
         const data = await res.json();
-        console.log('Fresh user data:', data.user); // Debug log
         if (data.user.approvedCategory) {
           setUserApprovedCategory(data.user.approvedCategory);
           setFormData(prev => ({ ...prev, category: data.user.approvedCategory }));
-          // Trigger session update to sync with fresh data
           await update({
             ...session,
             user: {
@@ -74,7 +64,6 @@ export default function AddWisdomPage() {
     }
   };
 
-  // Get available categories based on user role
   const getAvailableCategories = () => {
     const allCategories = [
       { value: 'MARRIAGE_GUIDANCE', label: 'Marriage Guidance' },
@@ -89,12 +78,14 @@ export default function AddWisdomPage() {
       { value: 'COMMUNITY_VALUES', label: 'Community Values' },
     ];
 
-    // If user is an elder, only show their approved category
-    if (session?.user?.role === 'ELDER' && userApprovedCategory) {
-      return allCategories.filter(cat => cat.value === userApprovedCategory);
+    if (session?.user?.role === 'ELDER') {
+      if (userApprovedCategory) {
+        return allCategories.filter(cat => cat.value === userApprovedCategory);
+      } else {
+        return [{ value: '', label: 'Loading your approved category...' }];
+      }
     }
     
-    // For admins and other users, show all categories
     return allCategories;
   };
 
@@ -105,10 +96,7 @@ export default function AddWisdomPage() {
   ];
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
 
@@ -131,10 +119,7 @@ export default function AddWisdomPage() {
         return;
       }
       
-      setFormData({
-        ...formData,
-        documentFile: file
-      });
+      setFormData({ ...formData, documentFile: file });
       setError('');
     }
   };
@@ -188,10 +173,7 @@ export default function AddWisdomPage() {
   };
 
   const handleRemoveFile = () => {
-    setFormData({
-      ...formData,
-      documentFile: null
-    });
+    setFormData({ ...formData, documentFile: null });
   };
 
   const handleAddTag = (e) => {
@@ -217,7 +199,6 @@ export default function AddWisdomPage() {
     setError('');
     setLoading(true);
 
-    // Validation
     if (!formData.title || !formData.content || !formData.category) {
       setError('Title, content, and category are required');
       setLoading(false);
@@ -261,8 +242,6 @@ export default function AddWisdomPage() {
       }
 
       setSuccess(true);
-      
-      // Redirect to wisdom library after 2 seconds
       setTimeout(() => {
         router.push('/wisdom');
       }, 2000);
@@ -276,51 +255,42 @@ export default function AddWisdomPage() {
 
   if (status === 'loading') {
     return (
-      <div className={styles.page}>
-        <div className={styles.loading}>
-          <Loader2 className={styles.spinner} size={48} />
-        </div>
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <Loader2 className="animate-spin text-green-600" size={48} />
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.container}>
-        {/* Header */}
-        <div className={styles.header}>
-          <h1 className={styles.title}>Share Your Wisdom</h1>
-          <p className={styles.subtitle}>
-            Contribute to preserving our cultural heritage
-          </p>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-900">Share Your Wisdom</h1>
+          <p className="mt-2 text-sm text-gray-600">Contribute to preserving our cultural heritage</p>
         </div>
 
-        {/* Form */}
-        <div className={styles.form}>
-          {/* Success Message */}
+        <div className="bg-white shadow rounded-lg p-6 sm:p-8">
           {success && (
-            <div className={styles.success}>
-              <CheckCircle size={20} />
+            <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-400 flex items-start space-x-3">
+              <CheckCircle size={20} className="text-green-500" />
               <div>
-                <p><strong>Wisdom Added Successfully!</strong></p>
-                <p>Redirecting to library...</p>
+                <p className="text-sm font-medium text-green-800">Wisdom Added Successfully!</p>
+                <p className="text-sm text-green-700">Redirecting to library...</p>
               </div>
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
-            <div className={styles.error}>
-              <AlertCircle size={20} />
-              <p>{error}</p>
+            <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-400 flex items-start space-x-3 text-red-700">
+              <AlertCircle size={20} className="text-red-500" />
+              <p className="text-sm font-medium">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* Title */}
-            <div className={styles.formGroup}>
-              <label htmlFor="title" className={styles.label}>
-                Title <span className={styles.required}>*</span>
+            <div className="mb-6">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                Title <span className="text-red-500">*</span>
               </label>
               <input
                 id="title"
@@ -328,45 +298,43 @@ export default function AddWisdomPage() {
                 type="text"
                 value={formData.title}
                 onChange={handleChange}
-                className={styles.input}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Enter a descriptive title"
                 disabled={loading || success}
               />
             </div>
 
-            {/* Content */}
-            <div className={styles.formGroup}>
-              <label htmlFor="content" className={styles.label}>
-                Content <span className={styles.required}>*</span>
+            <div className="mb-6">
+              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+                Content <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="content"
                 name="content"
+                rows="5"
                 value={formData.content}
                 onChange={handleChange}
-                className={styles.textarea}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Share the wisdom, story, or proverb..."
                 disabled={loading || success}
               />
-              <p className={`${styles.charCount} ${formData.content.length < 20 ? styles.charCountError : ''}`}>
+              <p className={`text-xs mt-1 ${formData.content.length < 20 ? 'text-red-500' : 'text-gray-500'}`}>
                 {formData.content.length} characters (minimum 20)
               </p>
             </div>
 
-            {/* Category and Language */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-              {/* Category */}
-              <div className={styles.formGroup}>
-                <label htmlFor="category" className={styles.label}>
-                  Category <span className={styles.required}>*</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  Category <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className={styles.select}
-                  disabled={loading || success || (session?.user?.role === 'ELDER')}
+                  className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={session?.user?.role === 'ELDER' || loading || success}
                 >
                   {getAvailableCategories().map(cat => (
                     <option key={cat.value} value={cat.value}>
@@ -375,23 +343,22 @@ export default function AddWisdomPage() {
                   ))}
                 </select>
                 {session?.user?.role === 'ELDER' && (
-                  <p className={styles.helpText}>
-                    As an elder, you can only share wisdom in your approved category.
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Locked to your approved Elder category.
                   </p>
                 )}
               </div>
 
-              {/* Language */}
-              <div className={styles.formGroup}>
-                <label htmlFor="language" className={styles.label}>
-                  Language <span className={styles.required}>*</span>
+              <div>
+                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
+                  Language <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="language"
                   name="language"
                   value={formData.language}
                   onChange={handleChange}
-                  className={styles.select}
+                  className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                   disabled={loading || success}
                 >
                   {languages.map(lang => (
@@ -403,44 +370,41 @@ export default function AddWisdomPage() {
               </div>
             </div>
 
-            {/* Tags */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Tags (Optional)</label>
-              <div className={styles.tagInput}>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags (Optional)</label>
+              <div className="flex gap-2">
                 <input
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAddTag(e);
-                    }
+                    if (e.key === 'Enter') handleAddTag(e);
                   }}
-                  className={`${styles.input} ${styles.tagInputField}`}
+                  className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Add a tag and press Enter"
                   disabled={loading || success}
                 />
                 <button
                   type="button"
                   onClick={handleAddTag}
-                  className={styles.addButton}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                   disabled={loading || success}
                 >
                   Add
                 </button>
               </div>
               {formData.tags.length > 0 && (
-                <div className={styles.tagList}>
+                <div className="flex flex-wrap gap-2 mt-2">
                   {formData.tags.map((tag, index) => (
-                    <span key={index} className={styles.tag}>
+                    <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       <span>#{tag}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className={styles.tagRemove}
+                        className="ml-1.5 inline-flex text-green-500 hover:text-green-700 focus:outline-none"
                         disabled={loading || success}
                       >
-                        <X size={16} />
+                        <X size={14} />
                       </button>
                     </span>
                   ))}
@@ -448,9 +412,8 @@ export default function AddWisdomPage() {
               )}
             </div>
 
-            {/* Audio URL */}
-            <div className={styles.formGroup}>
-              <label htmlFor="audioUrl" className={styles.label}>
+            <div className="mb-6">
+              <label htmlFor="audioUrl" className="block text-sm font-medium text-gray-700 mb-1">
                 Audio URL (Optional)
               </label>
               <input
@@ -459,48 +422,47 @@ export default function AddWisdomPage() {
                 type="url"
                 value={formData.audioUrl}
                 onChange={handleChange}
-                className={styles.input}
+                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="https://example.com/audio.mp3"
                 disabled={loading || success}
               />
-              <p className={styles.helpText}>Link to an audio recording of the wisdom</p>
+              <p className="text-xs text-gray-500 mt-1">Link to an audio recording of the wisdom</p>
             </div>
 
-            {/* Document Upload */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Supporting Document (Optional)
-              </label>
-              <div className={styles.fileUpload}>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Supporting Document (Optional)</label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-green-500 transition-colors">
                 {!formData.documentFile ? (
-                  <>
+                  <div className="space-y-1 text-center w-full">
                     <input
                       type="file"
                       id="documentFile"
                       accept=".pdf,.doc,.docx"
                       onChange={handleFileChange}
-                      className={styles.fileInput}
+                      className="sr-only"
                       disabled={loading || success}
                     />
-                    <label htmlFor="documentFile" className={styles.fileLabel}>
-                      <Upload size={20} />
-                      <span>Upload PDF or Word Document</span>
-                      <small>Max 10MB</small>
+                    <label htmlFor="documentFile" className="cursor-pointer flex flex-col items-center text-gray-600 hover:text-green-500">
+                      <Upload size={24} className="mb-2" />
+                      <span className="text-sm font-medium">Upload PDF or Word Document</span>
+                      <small className="text-xs text-gray-500">Max 10MB</small>
                     </label>
-                  </>
+                  </div>
                 ) : (
-                  <div className={styles.fileSelected}>
-                    <FileText size={20} />
-                    <div className={styles.fileInfo}>
-                      <span className={styles.fileName}>{formData.documentFile.name}</span>
-                      <small className={styles.fileSize}>
-                        {(formData.documentFile.size / (1024 * 1024)).toFixed(2)} MB
-                      </small>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-md w-full">
+                    <div className="flex items-center overflow-hidden">
+                      <FileText size={20} className="text-gray-400 flex-shrink-0" />
+                      <div className="flex flex-col ml-3 overflow-hidden">
+                        <span className="text-sm font-medium text-gray-900 truncate">{formData.documentFile.name}</span>
+                        <small className="text-xs text-gray-500">
+                          {(formData.documentFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </small>
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={handleRemoveFile}
-                      className={styles.fileRemove}
+                      className="p-1 hover:bg-gray-200 rounded-full text-gray-500 flex-shrink-0 ml-4"
                       disabled={loading || success}
                     >
                       <X size={16} />
@@ -508,70 +470,69 @@ export default function AddWisdomPage() {
                   </div>
                 )}
               </div>
-              <p className={styles.helpText}>Upload a PDF or Word document with additional details</p>
             </div>
 
-            {/* Image Upload */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Images (Optional)
-              </label>
-              <div className={styles.fileUpload}>
-                <input
-                  type="file"
-                  id="imageFiles"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className={styles.fileInput}
-                  disabled={loading || success || uploadingImages}
-                />
-                <label htmlFor="imageFiles" className={styles.fileLabel}>
-                  <Upload size={20} />
-                  <span>{uploadingImages ? 'Uploading...' : 'Upload Images'}</span>
-                  <small>JPG, PNG, GIF (Max 5MB each)</small>
-                </label>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Images (Optional)</label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-green-500 transition-colors">
+                <div className="space-y-1 text-center w-full">
+                  <input
+                    type="file"
+                    id="imageFiles"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="sr-only"
+                    disabled={loading || success || uploadingImages}
+                  />
+                  <label htmlFor="imageFiles" className="cursor-pointer flex flex-col items-center text-gray-600 hover:text-green-500">
+                    <Upload size={24} className="mb-2" />
+                    <span className="text-sm font-medium">{uploadingImages ? 'Uploading...' : 'Upload Images'}</span>
+                    <small className="text-xs text-gray-500">JPG, PNG, GIF (Max 5MB each)</small>
+                  </label>
+                </div>
               </div>
               {formData.images.length > 0 && (
-                <div className={styles.imagePreviewGrid}>
+                <div className="grid grid-cols-2 gap-4 mt-4 sm:grid-cols-3">
                   {formData.images.map((url, index) => (
-                    <div key={index} className={styles.imagePreview}>
-                      <img src={url} alt={`Preview ${index + 1}`} className={styles.previewImg} />
+                    <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200 h-24">
+                      <img src={url} alt={`Preview ${index + 1}`} className="object-cover w-full h-full" />
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(index)}
-                        className={styles.removeImageBtn}
+                        className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
                         disabled={loading || success}
                       >
-                        <X size={16} />
+                        <X size={14} />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
-              <p className={styles.helpText}>Upload images to make your wisdom more engaging</p>
             </div>
 
-            {/* Buttons */}
-            <div className={styles.buttonGroup}>
-              <button
-                type="submit"
-                disabled={loading || success}
-                className={styles.submitButton}
+            <div className="flex flex-col sm:flex-row gap-3 pt-5 border-t border-gray-200 mt-6">
+              <button 
+                type="submit" 
+                disabled={loading || success} 
+                className="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 flex-1"
               >
                 {loading ? (
                   <>
-                    <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                    <Loader2 size={18} className="animate-spin mr-2" />
                     <span>Publishing...</span>
                   </>
                 ) : (
                   <>
-                    <Plus size={20} />
+                    <Plus size={18} className="mr-2" />
                     <span>Publish Wisdom</span>
                   </>
                 )}
               </button>
-              <Link href="/wisdom" className={styles.cancelButton}>
+              <Link 
+                href="/wisdom" 
+                className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:w-auto"
+              >
                 Cancel
               </Link>
             </div>
