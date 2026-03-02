@@ -21,6 +21,7 @@ model User {
   residence    String?
   gender       String?
   isVerified   Boolean      @default(false)
+  approvedCategory Category?
 
   // Fields for Password Reset (CRITICAL ADDITION)
   resetToken       String?   @unique
@@ -332,6 +333,9 @@ model ElderRequest {
   id              String   @id @default(cuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        Category?
+  qualifications  String?
+  yearsExperience Int?
   reason          String
   experience      String
   certificates    String[] @default([])
@@ -346,6 +350,7 @@ model ElderRequest {
 
   @@index([userId])
   @@index([status])
+  @@index([category])
   @@map("elder_requests")
 }
 

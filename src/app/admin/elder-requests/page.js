@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { UserCheck, Loader2, CheckCircle, XCircle, Clock, ArrowLeft, Eye } from 'lucide-react';
+import { UserCheck, Loader2, CheckCircle, XCircle, Clock, ArrowLeft, Eye, BookOpen, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
+import { CATEGORY_QUALIFICATIONS } from '@/lib/categoryQualifications';
 import styles from './page.module.css';
 
 export default function ElderRequestsPage() {
@@ -109,6 +110,39 @@ export default function ElderRequestsPage() {
                 </div>
 
                 <div className={styles.cardBody}>
+                  {request.category && (
+                    <div className={styles.field}>
+                      <strong>Applied Category:</strong>
+                      <div className={styles.categoryInfo}>
+                        <BookOpen size={16} className={styles.categoryIcon} />
+                        <span>{CATEGORY_QUALIFICATIONS[request.category]?.name.en || request.category}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {request.category && (
+                    <div className={styles.field}>
+                      <strong>Required Qualifications:</strong>
+                      <div className={styles.requirementsBox}>
+                        <ul className={styles.requirementsList}>
+                          {CATEGORY_QUALIFICATIONS[request.category]?.requiredQualifications.en.map((req, index) => (
+                            <li key={index}>{req}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {request.qualifications && (
+                    <div className={styles.field}>
+                      <strong>Applicant's Qualifications:</strong>
+                      <div className={styles.qualificationsBox}>
+                        <GraduationCap size={16} className={styles.qualIcon} />
+                        <p>{request.qualifications}</p>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className={styles.field}>
                     <strong>Reason:</strong>
                     <p>{request.reason}</p>
@@ -117,6 +151,26 @@ export default function ElderRequestsPage() {
                     <strong>Experience:</strong>
                     <p>{request.experience}</p>
                   </div>
+                  {request.cvUrl && (
+                    <div className={styles.field}>
+                      <strong>CV:</strong>
+                      <a href={request.cvUrl} target="_blank" rel="noopener noreferrer" className={styles.documentLink}>
+                        View CV
+                      </a>
+                    </div>
+                  )}
+                  {request.documentsUrl && request.documentsUrl.length > 0 && (
+                    <div className={styles.field}>
+                      <strong>Supporting Documents:</strong>
+                      <div className={styles.documentLinks}>
+                        {request.documentsUrl.map((url, index) => (
+                          <a key={index} href={url} target="_blank" rel="noopener noreferrer" className={styles.documentLink}>
+                            Document {index + 1}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {request.certificates.length > 0 && (
                     <div className={styles.field}>
                       <strong>Certificates:</strong>

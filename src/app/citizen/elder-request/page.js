@@ -2,15 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, FileText, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, Clock, ArrowLeft, BookOpen } from 'lucide-react';
 import Link from 'next/link';
+import { CATEGORY_QUALIFICATIONS } from '@/lib/categoryQualifications';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function ElderRequestPage() {
   const router = useRouter();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [existingRequest, setExistingRequest] = useState(null);
   const [formData, setFormData] = useState({
+    category: '',
+    qualifications: '',
+    yearsExperience: '',
     reason: '',
     experience: ''
   });
@@ -65,7 +71,7 @@ export default function ElderRequestPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.reason || !formData.experience) {
+    if (!formData.category || !formData.qualifications || !formData.yearsExperience || !formData.reason || !formData.experience) {
       alert('Please fill in all required fields');
       return;
     }
@@ -109,6 +115,8 @@ export default function ElderRequestPage() {
     );
   };
 
+  const selectedCategoryInfo = formData.category ? CATEGORY_QUALIFICATIONS[formData.category] : null;
+
   if (existingRequest) {
     return (
       <div className={styles.page}>
@@ -128,6 +136,20 @@ export default function ElderRequestPage() {
                 <span className={styles.label}>Submitted:</span>
                 <span>{new Date(existingRequest.createdAt).toLocaleDateString()}</span>
               </div>
+
+              {existingRequest.category && (
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Category:</span>
+                  <span>{CATEGORY_QUALIFICATIONS[existingRequest.category]?.name[language] || existingRequest.category}</span>
+                </div>
+              )}
+
+              {existingRequest.yearsExperience && (
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Years of Experience:</span>
+                  <span>{existingRequest.yearsExperience} years</span>
+                </div>
+              )}
               
               <div className={styles.detailRow}>
                 <span className={styles.label}>Reason:</span>
@@ -138,6 +160,13 @@ export default function ElderRequestPage() {
                 <span className={styles.label}>Experience:</span>
                 <p>{existingRequest.experience}</p>
               </div>
+
+              {existingRequest.qualifications && (
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Qualifications:</span>
+                  <p>{existingRequest.qualifications}</p>
+                </div>
+              )}
 
               {existingRequest.certificates?.length > 0 && (
                 <div className={styles.detailRow}>
@@ -183,6 +212,57 @@ export default function ElderRequestPage() {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
+              <label>Select Category *</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                required
+              >
+                <option value="">-- Choose a category --</option>
+                {Object.keys(CATEGORY_QUALIFICATIONS).map(key => (
+                  <option key={key} value={key}>
+                    {CATEGORY_QUALIFICATIONS[key].name[language]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCategoryInfo && (
+              <div className={styles.requirementsBox}>
+                <h3><BookOpen size={18} /> Required Qualifications for {selectedCategoryInfo.name[language]}</h3>
+                <ul>
+                  {selectedCategoryInfo.requiredQualifications[language].map((qual, idx) => (
+                    <li key={idx}>{qual}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className={styles.formGroup}>
+              <label>Years of Experience *</label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={formData.yearsExperience}
+                onChange={(e) => setFormData({ ...formData, yearsExperience: e.target.value })}
+                placeholder="e.g., 10"
+                required
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label>Your Qualifications *</label>
+              <textarea
+                value={formData.qualifications}
+                onChange={(e) => setFormData({ ...formData, qualifications: e.target.value })}
+                placeholder="Describe how you meet the required qualifications listed above..."
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className={styles.formGroup}>
               <label>Why do you want to become an elder? *</label>
               <textarea
                 value={formData.reason}
@@ -194,7 +274,7 @@ export default function ElderRequestPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label>Your Experience & Qualifications *</label>
+              <label>Additional Experience & Background *</label>
               <textarea
                 value={formData.experience}
                 onChange={(e) => setFormData({ ...formData, experience: e.target.value })}

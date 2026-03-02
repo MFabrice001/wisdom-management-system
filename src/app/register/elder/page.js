@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { 
   BookOpen, Mail, User, AlertCircle, 
   CheckCircle, MapPin, Fingerprint, Loader2,
-  Upload, FileText, X, Users
+  Upload, FileText, X, Users, GraduationCap
 } from 'lucide-react';
+import { CATEGORY_QUALIFICATIONS } from '@/lib/categoryQualifications';
 import styles from './page.module.css';
 
 export default function ElderApplicationPage() {
@@ -14,10 +15,12 @@ export default function ElderApplicationPage() {
     email: '',
     nationalId: '',
     residence: '',
-    gender: ''
+    gender: '',
+    category: '',
+    qualifications: ''
   });
   const [cvFile, setCvFile] = useState(null);
-  const [documentFile, setDocumentFile] = useState(null);
+  const [documentFiles, setDocumentFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,17 +35,20 @@ export default function ElderApplicationPage() {
   };
 
   const handleFileUpload = async (e, fileType) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
-      return;
+    // Check file sizes
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Each file size must be less than 5MB');
+        return;
+      }
     }
 
     setUploading(true);
     const formData = new FormData();
-    formData.append('files', file);
+    files.forEach(file => formData.append('files', file));
 
     try {
       const res = await fetch('/api/upload', {
@@ -52,12 +58,16 @@ export default function ElderApplicationPage() {
 
       if (res.ok) {
         const data = await res.json();
-        const fileData = { name: file.name, url: data.urls[0] };
         
         if (fileType === 'cv') {
+          const fileData = { name: files[0].name, url: data.urls[0] };
           setCvFile(fileData);
         } else {
-          setDocumentFile(fileData);
+          const newFiles = files.map((file, index) => ({
+            name: file.name,
+            url: data.urls[index]
+          }));
+          setDocumentFiles(prev => [...prev, ...newFiles]);
         }
       } else {
         setError(`Failed to upload ${fileType}`);
@@ -76,7 +86,7 @@ export default function ElderApplicationPage() {
 
     // Validation
     if (!formData.name || !formData.email || !formData.nationalId || 
-        !formData.residence || !formData.gender) {
+        !formData.residence || !formData.gender || !formData.category || !formData.qualifications) {
       setError('All fields are required');
       setLoading(false);
       return;
@@ -88,8 +98,8 @@ export default function ElderApplicationPage() {
       return;
     }
 
-    if (!documentFile) {
-      setError('Supporting document is required');
+    if (!documentFiles.length) {
+      setError('At least one supporting document is required');
       setLoading(false);
       return;
     }
@@ -127,8 +137,10 @@ export default function ElderApplicationPage() {
           nationalId: formData.nationalId,
           residence: formData.residence,
           gender: formData.gender,
+          category: formData.category,
+          qualifications: formData.qualifications,
           cvUrl: cvFile.url,
-          documentUrl: documentFile.url
+          documentUrls: documentFiles.map(file => file.url)
         }),
       });
 
@@ -143,10 +155,12 @@ export default function ElderApplicationPage() {
         email: '',
         nationalId: '',
         residence: '',
-        gender: ''
+        gender: '',
+        category: '',
+        qualifications: ''
       });
       setCvFile(null);
-      setDocumentFile(null);
+      setDocumentFiles([]);
 
     } catch (error) {
       setError(error.message);
@@ -287,6 +301,64 @@ export default function ElderApplicationPage() {
               </div>
             </div>
 
+            {/* Category Field */}
+            <div className={styles.formGroup}>
+              <label htmlFor="category" className={styles.label}>Wisdom Category *</label>
+              <div className={styles.inputWrapper}>
+                <BookOpen className={styles.inputIcon} size={20} />
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className={styles.input}
+                  disabled={loading || success}
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {Object.entries(CATEGORY_QUALIFICATIONS).map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value.name.en}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Category Requirements Display */}
+            {formData.category && (
+              <div className={styles.requirementsBox}>
+                <h4 className={styles.requirementsTitle}>
+                  <GraduationCap size={20} />
+                  Required Qualifications for {CATEGORY_QUALIFICATIONS[formData.category].name.en}
+                </h4>
+                <ul className={styles.requirementsList}>
+                  {CATEGORY_QUALIFICATIONS[formData.category].requiredQualifications.en.map((req, index) => (
+                    <li key={index}>{req}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Qualifications Field */}
+            <div className={styles.formGroup}>
+              <label htmlFor="qualifications" className={styles.label}>Your Qualifications *</label>
+              <div className={styles.inputWrapper}>
+                <GraduationCap className={styles.inputIcon} size={20} />
+                <textarea
+                  id="qualifications"
+                  name="qualifications"
+                  value={formData.qualifications}
+                  onChange={handleChange}
+                  className={`${styles.input} ${styles.textarea}`}
+                  placeholder="Describe your qualifications and experience relevant to the selected category..."
+                  rows={4}
+                  disabled={loading || success}
+                  required
+                />
+              </div>
+            </div>
+
             {/* CV Upload */}
             <div className={styles.formGroup}>
               <label className={styles.label}>Upload CV *</label>
@@ -318,7 +390,7 @@ export default function ElderApplicationPage() {
 
             {/* Document Upload */}
             <div className={styles.formGroup}>
-              <label className={styles.label}>Supporting Document *</label>
+              <label className={styles.label}>Supporting Documents * (Multiple files allowed)</label>
               <div className={styles.uploadArea}>
                 <input
                   type="file"
@@ -327,20 +399,29 @@ export default function ElderApplicationPage() {
                   id="doc-upload"
                   className={styles.fileInput}
                   disabled={loading || success || uploading}
+                  multiple
                 />
                 <label htmlFor="doc-upload" className={styles.uploadLabel}>
                   <Upload size={24} />
-                  <span>{uploading ? 'Uploading...' : 'Click to upload supporting document'}</span>
-                  <small>PDF, JPG, PNG, DOC, DOCX (Max 5MB)</small>
+                  <span>{uploading ? 'Uploading...' : 'Click to upload supporting documents'}</span>
+                  <small>PDF, JPG, PNG, DOC, DOCX (Max 5MB each, multiple files allowed)</small>
                 </label>
               </div>
-              {documentFile && (
-                <div className={styles.uploadedFile}>
-                  <FileText size={16} />
-                  <span>{documentFile.name}</span>
-                  <button type="button" onClick={() => setDocumentFile(null)} className={styles.removeBtn}>
-                    <X size={16} />
-                  </button>
+              {documentFiles.length > 0 && (
+                <div className={styles.uploadedFiles}>
+                  {documentFiles.map((file, index) => (
+                    <div key={index} className={styles.uploadedFile}>
+                      <FileText size={16} />
+                      <span>{file.name}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setDocumentFiles(prev => prev.filter((_, i) => i !== index))} 
+                        className={styles.removeBtn}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

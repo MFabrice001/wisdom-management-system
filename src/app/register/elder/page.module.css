@@ -250,7 +250,7 @@
 
 .textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 1rem;
@@ -342,4 +342,48 @@
 
 .removeBtn:hover {
   background: #fecaca;
+}
+
+.requirementsBox {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.requirementsTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0c4a6e;
+  margin-bottom: 0.75rem;
+}
+
+.requirementsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.requirementsList li {
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+  color: #0f172a;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.requirementsList li:before {
+  content: '•';
+  color: #0ea5e9;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.textarea {
+  padding-left: 2.5rem;
 }

@@ -36,7 +36,10 @@ export async function PATCH(request, { params }) {
     if (action === 'APPROVED') {
       await prisma.user.update({
         where: { id: elderRequest.userId },
-        data: { role: 'ELDER' }
+        data: { 
+          role: 'ELDER',
+          approvedCategory: elderRequest.category
+        }
       });
     }
 

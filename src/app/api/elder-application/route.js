@@ -3,11 +3,11 @@ import prisma from '@/lib/prisma';
 
 export async function POST(request) {
   try {
-    const { name, email, nationalId, residence, gender, cvUrl, documentUrl } = await request.json();
+    const { name, email, nationalId, residence, gender, category, qualifications, cvUrl, documentUrls } = await request.json();
 
     // Validation
-    if (!name || !email || !nationalId || !residence || !gender || !cvUrl || !documentUrl) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    if (!name || !email || !nationalId || !residence || !gender || !category || !qualifications || !cvUrl || !documentUrls || !documentUrls.length) {
+      return NextResponse.json({ error: 'All fields are required including at least one supporting document' }, { status: 400 });
     }
 
     // Check if email already exists
@@ -36,10 +36,12 @@ export async function POST(request) {
     const elderRequest = await prisma.elderRequest.create({
       data: {
         userId: user.id,
-        reason: `Elder application for ${name}`,
-        experience: `Application submitted via elder registration form`,
+        category,
+        qualifications,
+        reason: `Elder application for ${name} in ${category}`,
+        experience: qualifications,
         cvUrl,
-        documentsUrl: [documentUrl],
+        documentsUrl: documentUrls,
         status: 'PENDING'
       }
     });
