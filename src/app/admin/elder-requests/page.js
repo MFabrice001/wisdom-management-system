@@ -127,8 +127,12 @@ export default function ElderRequestsPage() {
                       </div>
                       
                       <div className={styles.field}>
-                        <strong>Category Requirements:</strong>
-                        <div className={styles.requirementsBox}>
+                        <strong>Category Requirements (Admin Reference):</strong>
+                        <div className={styles.adminReferenceBox}>
+                          <div className={styles.referenceHeader}>
+                            <GraduationCap size={16} />
+                            <span>Required for {CATEGORY_QUALIFICATIONS[request.category]?.name.en}</span>
+                          </div>
                           <ul className={styles.requirementsList}>
                             {CATEGORY_QUALIFICATIONS[request.category]?.requiredQualifications.en.map((req, index) => (
                               <li key={index}>{req}</li>
