@@ -33,16 +33,38 @@ export default function AddWisdomPage() {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (session?.user) {
+      console.log('Session user:', session.user); // Debug log
       // Set approved category for elders
       if (session.user.role === 'ELDER' && session.user.approvedCategory) {
+        console.log('Elder approved category:', session.user.approvedCategory); // Debug log
         setUserApprovedCategory(session.user.approvedCategory);
         setFormData(prev => ({ ...prev, category: session.user.approvedCategory }));
+      } else if (session.user.role === 'ELDER' && !session.user.approvedCategory) {
+        // Elder without approved category - fetch fresh data
+        console.log('Elder has no approved category in session, fetching fresh data'); // Debug log
+        fetchFreshUserData();
       } else if (session.user.role !== 'ELDER') {
         // Non-elders can use any category, set default
         setFormData(prev => ({ ...prev, category: 'PROVERBS' }));
       }
     }
   }, [status, router, session]);
+
+  const fetchFreshUserData = async () => {
+    try {
+      const res = await fetch('/api/user/refresh-session');
+      if (res.ok) {
+        const data = await res.json();
+        console.log('Fresh user data:', data.user); // Debug log
+        if (data.user.approvedCategory) {
+          setUserApprovedCategory(data.user.approvedCategory);
+          setFormData(prev => ({ ...prev, category: data.user.approvedCategory }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fresh user data:', error);
+    }
+  };
 
   // Get available categories based on user role
   const getAvailableCategories = () => {
