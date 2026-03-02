@@ -8,7 +8,7 @@ import { Plus, AlertCircle, CheckCircle, Loader2, X, Upload, FileText } from 'lu
 import styles from './page.module.css';
 
 export default function AddWisdomPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,6 +59,14 @@ export default function AddWisdomPage() {
         if (data.user.approvedCategory) {
           setUserApprovedCategory(data.user.approvedCategory);
           setFormData(prev => ({ ...prev, category: data.user.approvedCategory }));
+          // Trigger session update to sync with fresh data
+          await update({
+            ...session,
+            user: {
+              ...session.user,
+              approvedCategory: data.user.approvedCategory
+            }
+          });
         }
       }
     } catch (error) {
