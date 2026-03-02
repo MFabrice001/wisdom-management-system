@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request) {
   try {
     const { name, email, nationalId, residence, gender, category, qualifications, cvUrl, documentUrls } = await request.json();
 
     // Validation
-    if (!name || !email || !nationalId || !residence || !gender || !category || !qualifications || !cvUrl || !documentUrls || !documentUrls.length) {
+    if (!name || !email || !nationalId || !residence || !gender || !category || !qualifications || !cvUrl || !documentUrls || !Array.isArray(documentUrls) || !documentUrls.length) {
       return NextResponse.json({ error: 'All fields are required including at least one supporting document' }, { status: 400 });
     }
 
@@ -17,6 +18,15 @@ export async function POST(request) {
 
     if (existingUser) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
+    }
+
+    // Check if nationalId already exists
+    const existingNationalId = await prisma.user.findUnique({
+      where: { nationalId }
+    });
+
+    if (existingNationalId) {
+      return NextResponse.json({ error: 'National ID already registered' }, { status: 400 });
     }
 
     // Create user first
@@ -53,7 +63,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Error creating elder application:', error);
     return NextResponse.json(
-      { error: 'Failed to submit application' },
+      { error: `Failed to submit application: ${error.message}` },
       { status: 500 }
     );
   }
