@@ -130,6 +130,7 @@ export const authOptions = {
           name: user.name,
           role: user.role,
           requirePasswordChange: user.requirePasswordChange,
+          approvedCategory: user.approvedCategory,
         };
       }
     })
@@ -140,6 +141,7 @@ export const authOptions = {
         token.id = user.id;
         token.role = user.role;
         token.requirePasswordChange = user.requirePasswordChange;
+        token.approvedCategory = user.approvedCategory;
       }
       return token;
     },
@@ -148,6 +150,7 @@ export const authOptions = {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.requirePasswordChange = token.requirePasswordChange;
+        session.user.approvedCategory = token.approvedCategory;
       }
       return session;
     }

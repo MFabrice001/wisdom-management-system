@@ -18,7 +18,7 @@ export default function AddWisdomPage() {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'PROVERBS',
+    category: '',
     language: 'KINYARWANDA',
     tags: [],
     audioUrl: '',
@@ -26,26 +26,47 @@ export default function AddWisdomPage() {
     documentFile: null,
   });
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [userApprovedCategory, setUserApprovedCategory] = useState(null);
 
-  // Redirect if not logged in
+  // Redirect if not logged in and fetch user's approved category
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
+    } else if (session?.user) {
+      // Set approved category for elders
+      if (session.user.role === 'ELDER' && session.user.approvedCategory) {
+        setUserApprovedCategory(session.user.approvedCategory);
+        setFormData(prev => ({ ...prev, category: session.user.approvedCategory }));
+      } else if (session.user.role !== 'ELDER') {
+        // Non-elders can use any category, set default
+        setFormData(prev => ({ ...prev, category: 'PROVERBS' }));
+      }
     }
-  }, [status, router]);
+  }, [status, router, session]);
 
-  const categories = [
-    { value: 'MARRIAGE_GUIDANCE', label: 'Marriage Guidance' },
-    { value: 'AGRICULTURE', label: 'Agriculture' },
-    { value: 'CONFLICT_RESOLUTION', label: 'Conflict Resolution' },
-    { value: 'RWANDAN_HISTORY', label: 'Rwandan History' },
-    { value: 'MORAL_CONDUCT', label: 'Moral Conduct' },
-    { value: 'TRADITIONAL_CEREMONIES', label: 'Traditional Ceremonies' },
-    { value: 'PROVERBS', label: 'Proverbs' },
-    { value: 'STORIES', label: 'Stories' },
-    { value: 'LIFE_LESSONS', label: 'Life Lessons' },
-    { value: 'COMMUNITY_VALUES', label: 'Community Values' },
-  ];
+  // Get available categories based on user role
+  const getAvailableCategories = () => {
+    const allCategories = [
+      { value: 'MARRIAGE_GUIDANCE', label: 'Marriage Guidance' },
+      { value: 'AGRICULTURE', label: 'Agriculture' },
+      { value: 'CONFLICT_RESOLUTION', label: 'Conflict Resolution' },
+      { value: 'RWANDAN_HISTORY', label: 'Rwandan History' },
+      { value: 'MORAL_CONDUCT', label: 'Moral Conduct' },
+      { value: 'TRADITIONAL_CEREMONIES', label: 'Traditional Ceremonies' },
+      { value: 'PROVERBS', label: 'Proverbs' },
+      { value: 'STORIES', label: 'Stories' },
+      { value: 'LIFE_LESSONS', label: 'Life Lessons' },
+      { value: 'COMMUNITY_VALUES', label: 'Community Values' },
+    ];
+
+    // If user is an elder, only show their approved category
+    if (session?.user?.role === 'ELDER' && userApprovedCategory) {
+      return allCategories.filter(cat => cat.value === userApprovedCategory);
+    }
+    
+    // For admins and other users, show all categories
+    return allCategories;
+  };
 
   const languages = [
     { value: 'KINYARWANDA', label: 'Kinyarwanda' },
@@ -315,14 +336,19 @@ export default function AddWisdomPage() {
                   value={formData.category}
                   onChange={handleChange}
                   className={styles.select}
-                  disabled={loading || success}
+                  disabled={loading || success || (session?.user?.role === 'ELDER')}
                 >
-                  {categories.map(cat => (
+                  {getAvailableCategories().map(cat => (
                     <option key={cat.value} value={cat.value}>
                       {cat.label}
                     </option>
                   ))}
                 </select>
+                {session?.user?.role === 'ELDER' && (
+                  <p className={styles.helpText}>
+                    As an elder, you can only share wisdom in your approved category.
+                  </p>
+                )}
               </div>
 
               {/* Language */}
