@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
-import fs from 'fs';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 // GET - Fetch all wisdom entries with filters
 export async function GET(request) {
@@ -85,24 +84,18 @@ export async function POST(request) {
     
     // Handle file upload if present
     if (documentFile && documentFile.size > 0) {
-      // Create uploads directory if it doesn't exist
-      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+      // 5MB limit check for the document
+      if (documentFile.size > 5 * 1024 * 1024) {
+        return NextResponse.json({ error: 'Document size too large (Max 5MB)' }, { status: 400 });
       }
+
+      // Upload directly to Vercel Blob
+      const blob = await put(documentFile.name, documentFile, {
+        access: 'public',
+      });
       
-      // Generate unique filename
-      const timestamp = Date.now();
-      const fileName = `${timestamp}-${documentFile.name}`;
-      const filePath = path.join(uploadsDir, fileName);
-      
-      // Save file to disk
-      const bytes = await documentFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      fs.writeFileSync(filePath, buffer);
-      
-      // Store relative path in database
-      documentUrl = `uploads/${fileName}`;
+      // Store the secure cloud URL in the database
+      documentUrl = blob.url;
     }
 
     // Create wisdom
