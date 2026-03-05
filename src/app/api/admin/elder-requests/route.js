@@ -97,7 +97,8 @@ export async function POST(request) {
         data: { 
           role: 'ELDER',
           password: hashedPassword,
-          requirePasswordChange: true
+          requirePasswordChange: true,
+          approvedCategory: elderRequest.category // <-- FIX: Saves the category to the User model
         }
       });
       

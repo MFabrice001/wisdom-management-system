@@ -45,23 +45,21 @@ export default function AddWisdomPage() {
 
   const fetchFreshUserData = async () => {
     try {
-      const res = await fetch('/api/user/refresh-session');
+      const res = await fetch('/api/auth/session?update=true');
       if (res.ok) {
         const data = await res.json();
-        if (data.user.approvedCategory) {
+        if (data?.user?.approvedCategory) {
           setUserApprovedCategory(data.user.approvedCategory);
           setFormData(prev => ({ ...prev, category: data.user.approvedCategory }));
-          await update({
-            ...session,
-            user: {
-              ...session.user,
-              approvedCategory: data.user.approvedCategory
-            }
-          });
+        } else {
+          setUserApprovedCategory('UNASSIGNED');
         }
+      } else {
+        setUserApprovedCategory('UNASSIGNED');
       }
     } catch (error) {
       console.error('Error fetching fresh user data:', error);
+      setUserApprovedCategory('UNASSIGNED');
     }
   };
 
@@ -80,8 +78,11 @@ export default function AddWisdomPage() {
     ];
 
     if (session?.user?.role === 'ELDER') {
-      if (userApprovedCategory) {
-        return allCategories.filter(cat => cat.value === userApprovedCategory);
+      if (userApprovedCategory && userApprovedCategory !== 'UNASSIGNED') {
+        const matched = allCategories.filter(cat => cat.value === userApprovedCategory);
+        return matched.length > 0 ? matched : [{ value: userApprovedCategory, label: userApprovedCategory }];
+      } else if (userApprovedCategory === 'UNASSIGNED') {
+        return [{ value: '', label: '⚠️ No category assigned in database' }];
       } else {
         return [{ value: '', label: 'Loading your approved category...' }];
       }
@@ -331,27 +332,32 @@ export default function AddWisdomPage() {
                   Category <span className={styles.required}>*</span>
                 </label>
                 <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className={styles.select}
-                  disabled={session?.user?.role === 'ELDER' || loading || success}
-                >
-                  {getAvailableCategories().map(cat => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-                {session?.user?.role === 'ELDER' && (
-                  <p className={styles.helpText} style={{color: 'green', marginTop: '4px'}}>
-                    ✓ Locked to your approved Elder category.
-                  </p>
-                )}
-              </div>
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className={styles.select}
+              disabled={session?.user?.role === 'ELDER' || loading || success}
+            >
+              {getAvailableCategories().map(cat => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+            {session?.user?.role === 'ELDER' && userApprovedCategory !== 'UNASSIGNED' && (
+              <p className={styles.helpText} style={{color: 'green', marginTop: '4px'}}>
+                ✓ Locked to your approved Elder category.
+              </p>
+            )}
+            {session?.user?.role === 'ELDER' && userApprovedCategory === 'UNASSIGNED' && (
+              <p className={styles.helpText} style={{color: 'red', marginTop: '4px'}}>
+                ⚠️ Error: Admin approved you without assigning a category.
+              </p>
+            )}
+          </div>
 
-              <div className={styles.formGroup}>
+          <div className={styles.formGroup}>
                 <label htmlFor="language" className={styles.label}>
                   Language <span className={styles.required}>*</span>
                 </label>
