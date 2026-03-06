@@ -9,11 +9,9 @@ import {
   ArrowUpRight, Loader2, Settings, BarChart3, RefreshCw, FileText, Eye, Calendar, Lightbulb, UserCheck, X, Check, Mail, Send
 } from 'lucide-react';
 import AnalyticsChart from '@/components/admin/AnalyticsChart';
-import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
 export default function AdminDashboard() {
-  const { language } = useLanguage();
   const { data: session, status } = useSession();
   const router = useRouter();
   const [analytics, setAnalytics] = useState(null);
@@ -104,11 +102,11 @@ export default function AdminDashboard() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        {/* Header - Compact Spacing */}
-        <div className={styles.header} style={{ marginBottom: '2rem' }}>
+        {/* Header */}
+        <div className={styles.header}>
           <div>
-            <h1 className={styles.title} style={{ marginBottom: '0.5rem', fontSize: '2rem' }}>Admin Dashboard</h1>
-            <p className={styles.subtitle} style={{ color: '#6b7280' }}>Overview of system performance and management</p>
+            <h1 className={styles.title}>Admin Dashboard</h1>
+            <p className={styles.subtitle}>Overview of system performance and management</p>
           </div>
           <div className={styles.headerActions}>
             <button onClick={handleRefresh} className={styles.refreshButton} disabled={refreshing}>
@@ -123,7 +121,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Analytics Overview */}
-        <div className={styles.statsGrid} style={{ marginBottom: '2.5rem', gap: '1.5rem' }}>
+        <div className={styles.statsGrid}>
           <StatCard
             icon={Users}
             label="Total Users"
@@ -159,17 +157,18 @@ export default function AdminDashboard() {
           <AnalyticsChart />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* CSS MODULE MAIN LAYOUT GRID */}
+        <div className={styles.mainLayout}>
+          
           {/* Main Column: Quick Actions & Recent Activity */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className={styles.mainColumn}>
             
-            {/* Quick Actions */}
-            <div className={styles.section} style={{ marginBottom: '0' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>
                 <Settings size={20} />
                 Quick Actions
               </h2>
-              <div className={styles.actionsGrid} style={{ gap: '1rem' }}>
+              <div className={styles.actionsGrid}>
                 <ActionCard
                   icon={Mail}
                   title="Contacts"
@@ -222,13 +221,12 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Engagement Stats */}
-            <div className={styles.section} style={{ marginBottom: '0' }}>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>
                 <TrendingUp size={20} />
                 Engagement Analytics
               </h2>
-              <div className={styles.activityGrid} style={{ gap: '1rem' }}>
+              <div className={styles.activityGrid}>
                 <ActivityCard
                   icon={Users}
                   label="Active Users"
@@ -252,29 +250,29 @@ export default function AdminDashboard() {
           </div>
 
           {/* Sidebar Column: Elder Requests, Top Contributors & Categories */}
-          <div className="space-y-8">
-            {/* Elder Requests */}
+          <div className={styles.sidebarColumn}>
+            
             {elderRequests.length > 0 && (
-              <div className={styles.section} style={{ marginBottom: '0' }}>
-                <h2 className={styles.sectionTitle} style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>
                   <UserCheck size={20} />
                   Elder Requests ({elderRequests.length})
                 </h2>
-                <div className={styles.wisdomList} style={{ gap: '0.75rem' }}>
+                <div className={styles.wisdomList}>
                   {elderRequests.map((request) => (
                     <ElderRequestCard key={request.id} request={request} onAction={handleElderRequest} onView={setSelectedRequest} />
                   ))}
                 </div>
               </div>
             )}
-            {/* Top Contributors */}
+            
             {analytics?.topContributors && analytics.topContributors.length > 0 && (
-              <div className={styles.section} style={{ marginBottom: '0' }}>
-                <h2 className={styles.sectionTitle} style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>
                   <BarChart3 size={20} />
                   Top Contributors
                 </h2>
-                <div className={styles.wisdomList} style={{ gap: '0.75rem' }}>
+                <div className={styles.wisdomList}>
                   {analytics.topContributors.map((contributor, index) => (
                     <ContributorCard key={contributor.id} contributor={contributor} rank={index + 1} />
                   ))}
@@ -282,15 +280,14 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* Category Stats */}
             {analytics?.contentAnalytics?.topCategories && analytics.contentAnalytics.topCategories.length > 0 && (
-              <div className={styles.section} style={{ marginBottom: '0' }}>
-                <h2 className={styles.sectionTitle} style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>
                   <Calendar size={20} />
                   Top Categories
                 </h2>
-                <div className={styles.categoryGrid} style={{ gap: '0.75rem' }}>
-                  {analytics.contentAnalytics.topCategories.slice(0, 5).map((cat) => (
+                <div className={styles.categoryGrid}>
+                  {analytics.contentAnalytics.topCategories.slice(0, 4).map((cat) => (
                     <CategoryCard key={cat.category} category={cat.category} count={cat._count.category} views={cat._sum.views} />
                   ))}
                 </div>
@@ -318,225 +315,136 @@ export default function AdminDashboard() {
   );
 }
 
-// Stat Card Component
+// Subcomponents using new clean CSS Module classes
+
 function StatCard({ icon: Icon, label, value, color, link }) {
   const content = (
     <>
-      <div className={styles.statIcon} style={{ background: color, width: '3rem', height: '3rem', borderRadius: '0.75rem' }}>
-        <Icon size={20} color="white" />
+      <div className={styles.statIcon} style={{ background: color }}>
+        <Icon size={24} color="white" />
       </div>
       <div className={styles.statInfo}>
-        <p className={styles.statValue} style={{ fontSize: '1.5rem', marginBottom: '0' }}>{value}</p>
-        <p className={styles.statLabel} style={{ fontSize: '0.8rem' }}>{label}</p>
+        <p className={styles.statValue}>{value}</p>
+        <p className={styles.statLabel}>{label}</p>
       </div>
     </>
   );
 
   if (link) {
-    return (
-      <Link href={link} className={styles.statCard} style={{ padding: '1.25rem', gap: '1rem' }}>
-        {content}
-      </Link>
-    );
+    return <Link href={link} className={styles.statCard}>{content}</Link>;
   }
-
-  return <div className={styles.statCard} style={{ padding: '1.25rem', gap: '1rem' }}>{content}</div>;
+  return <div className={styles.statCard}>{content}</div>;
 }
 
-// Activity Card Component
 function ActivityCard({ icon: Icon, label, value, color }) {
   return (
-    <div className={styles.activityCard} style={{ padding: '1.25rem', gap: '1rem' }}>
-      <div className={styles.activityIcon} style={{ color, width: '2.5rem', height: '2.5rem' }}>
-        <Icon size={20} />
+    <div className={styles.activityCard}>
+      <div className={styles.activityIcon} style={{ color, backgroundColor: `${color}15` }}>
+        <Icon size={24} />
       </div>
       <div>
-        <p className={styles.activityValue} style={{ fontSize: '1.5rem', marginBottom: '0' }}>{value}</p>
-        <p className={styles.activityLabel} style={{ fontSize: '0.8rem' }}>{label}</p>
+        <p className={styles.activityValue}>{value}</p>
+        <p className={styles.activityLabel}>{label}</p>
       </div>
     </div>
   );
 }
 
-// Action Card Component
 function ActionCard({ icon: Icon, title, description, link, onClick, color, isRefreshing }) {
   const content = (
     <>
-      <div className={styles.actionIcon} style={{ background: color, width: '2.5rem', height: '2.5rem', marginBottom: '0.75rem' }}>
-        <Icon size={18} color="white" className={isRefreshing ? styles.spinning : ''} />
+      <div className={styles.actionIcon} style={{ background: color }}>
+        <Icon size={20} color="white" className={isRefreshing ? styles.spinning : ''} />
       </div>
-      <h3 className={styles.actionTitle} style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{title}</h3>
-      <p className={styles.actionDescription} style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>{description}</p>
+      <h3 className={styles.actionTitle}>{title}</h3>
+      <p className={styles.actionDescription}>{description}</p>
     </>
   );
 
   if (link) {
-    return (
-      <Link href={link} className={styles.actionCard} style={{ padding: '1.25rem' }}>
-        {content}
-      </Link>
-    );
+    return <Link href={link} className={styles.actionCard}>{content}</Link>;
   }
-
-  return (
-    <button onClick={onClick} className={styles.actionCard} disabled={isRefreshing} style={{ padding: '1.25rem' }}>
-      {content}
-    </button>
-  );
+  return <button onClick={onClick} className={styles.actionCard} disabled={isRefreshing}>{content}</button>;
 }
 
-// Contributor Card Component
 function ContributorCard({ contributor, rank }) {
   return (
-    <Link href={`/admin/users`} className={styles.wisdomCard} style={{ padding: '1rem', gap: '1rem' }}>
-      <div className={styles.wisdomRank} style={{ width: '2rem', height: '2rem', fontSize: '0.9rem' }}>#{rank}</div>
-      <div className={styles.wisdomContent}>
-        <h4 className={styles.wisdomTitle} style={{ fontSize: '0.95rem', marginBottom: '0.25rem' }}>{contributor.name}</h4>
-        <div className={styles.wisdomStats} style={{ gap: '1rem', fontSize: '0.75rem' }}>
-          <span>
-            <BookOpen size={12} />
-            {contributor._count.wisdoms}
-          </span>
-          <span>
-            <MessageCircle size={12} />
-            {contributor._count.comments}
-          </span>
+    <Link href={`/admin/users`} className={styles.wisdomCard}>
+      <div className={styles.wisdomHeader}>
+        <div className={styles.wisdomRank}>#{rank}</div>
+        <div className={styles.wisdomContent}>
+          <h4 className={styles.wisdomTitle}>{contributor.name}</h4>
+          <div className={styles.wisdomStats}>
+            <span><BookOpen size={14} />{contributor._count.wisdoms}</span>
+            <span><MessageCircle size={14} />{contributor._count.comments}</span>
+          </div>
         </div>
       </div>
     </Link>
   );
 }
 
-// Category Card Component
 function CategoryCard({ category, count, views }) {
   const formatCategory = (cat) => {
-    return cat.split('_').map(word => 
-      word.charAt(0) + word.slice(1).toLowerCase()
-    ).join(' ');
+    return cat.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ');
   };
 
   return (
-    <div className={styles.categoryCard} style={{ padding: '1rem' }}>
-      <p className={styles.categoryName} style={{ fontSize: '0.8rem', marginBottom: '0.25rem' }}>{formatCategory(category)}</p>
-      <p className={styles.categoryCount} style={{ fontSize: '1.25rem' }}>{count}</p>
-      <p style={{ fontSize: '0.7rem', color: '#6b7280' }}>{views || 0} views</p>
+    <div className={styles.categoryCard}>
+      <p className={styles.categoryName}>{formatCategory(category)}</p>
+      <p className={styles.categoryCount}>{count}</p>
+      <p className={styles.categoryViews}>{views || 0} views</p>
     </div>
   );
 }
 
-// Elder Request Card Component
 function ElderRequestCard({ request, onAction, onView }) {
   return (
-    <div className={styles.wisdomCard} style={{ padding: '1rem', gap: '1rem' }}>
+    <div className={styles.wisdomCard}>
       <div className={styles.wisdomContent}>
-        <h4 className={styles.wisdomTitle} style={{ fontSize: '0.95rem', marginBottom: '0.25rem' }}>{request.user.name}</h4>
-        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>{request.user.email}</p>
-        <div className={styles.wisdomStats} style={{ gap: '1rem', fontSize: '0.75rem' }}>
-          <span>
-            <BookOpen size={12} />
-            {request.user._count?.wisdoms || 0} wisdoms
-          </span>
-          <span>
-            <MessageCircle size={12} />
-            {request.user._count?.comments || 0} comments
-          </span>
+        <h4 className={styles.wisdomTitle}>{request.user.name}</h4>
+        <p className={styles.wisdomSubtitle}>{request.user.email}</p>
+        <div className={styles.wisdomStats}>
+          <span><BookOpen size={14} />{request.user._count?.wisdoms || 0} wisdoms</span>
+          <span><MessageCircle size={14} />{request.user._count?.comments || 0} comments</span>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button 
-          onClick={() => onView(request)}
-          style={{ 
-            padding: '0.5rem', 
-            background: '#3b82f6', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            fontSize: '0.75rem'
-          }}
-        >
-          <Eye size={14} />
-          View
+      <div className={styles.wisdomActions}>
+        <button onClick={() => onView(request)} className={`${styles.actionBtn} ${styles.btnBlue}`}>
+          <Eye size={14} /> View
         </button>
-        <button 
-          onClick={() => onAction(request.user.id, 'approve')}
-          style={{ 
-            padding: '0.5rem', 
-            background: '#22c55e', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            fontSize: '0.75rem'
-          }}
-        >
-          <Check size={14} />
-          Approve
+        <button onClick={() => onAction(request.user.id, 'approve')} className={`${styles.actionBtn} ${styles.btnGreen}`}>
+          <Check size={14} /> Approve
         </button>
       </div>
     </div>
   );
 }
 
-// History Modal Component
 function HistoryModal({ history, onClose }) {
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '0.5rem',
-        padding: '2rem',
-        maxWidth: '800px',
-        width: '90%',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Elder Request History</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <X size={24} />
-          </button>
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContent}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Elder Request History</h2>
+          <button onClick={onClose} className={styles.closeButton}><X size={24} /></button>
         </div>
         
         {history.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#6b7280' }}>No processed requests yet.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className={styles.wisdomList}>
             {history.map((request) => (
-              <div key={request.id} style={{
-                padding: '1rem',
-                border: '1px solid #e5e7eb',
-                borderRadius: '0.5rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
+              <div key={request.id} className={styles.wisdomCard} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <h4 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{request.user.name}</h4>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>{request.user.email}</p>
-                  <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  <h4 className={styles.wisdomTitle}>{request.user.name}</h4>
+                  <p className={styles.wisdomSubtitle}>{request.user.email}</p>
+                  <p className={styles.wisdomSubtitle} style={{ marginBottom: 0 }}>
                     Reviewed: {new Date(request.reviewedAt).toLocaleDateString()}
                   </p>
                 </div>
                 <div style={{
-                  padding: '0.5rem 1rem',
+                  padding: '0.4rem 0.8rem',
                   borderRadius: '0.375rem',
                   color: 'white',
                   fontSize: '0.875rem',
@@ -554,7 +462,6 @@ function HistoryModal({ history, onClose }) {
   );
 }
 
-// Elder Request Modal Component (Updated with Contact Form)
 function ElderRequestModal({ request, onClose, onAction }) {
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
@@ -573,132 +480,61 @@ function ElderRequestModal({ request, onClose, onAction }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '0.5rem',
-        padding: '2rem',
-        maxWidth: '600px',
-        width: '90%',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Elder Application Details</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <X size={24} />
-          </button>
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContent}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Elder Application Details</h2>
+          <button onClick={onClose} className={styles.closeButton}><X size={24} /></button>
         </div>
         
         <div style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Applicant Information</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <strong>Name:</strong> {request.user.name}
-            </div>
-            <div>
-              <strong>Email:</strong> {request.user.email}
-            </div>
-            <div>
-              <strong>National ID:</strong> {request.user.nationalId}
-            </div>
-            <div>
-              <strong>Residence:</strong> {request.user.residence}
-            </div>
-            <div>
-              <strong>Gender:</strong> {request.user.gender}
-            </div>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem' }}>Applicant Information</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', fontSize: '0.95rem' }}>
+            <div><strong>Name:</strong> {request.user.name}</div>
+            <div><strong>Email:</strong> {request.user.email}</div>
+            <div><strong>National ID:</strong> {request.user.nationalId}</div>
+            <div><strong>Residence:</strong> {request.user.residence}</div>
+            <div><strong>Gender:</strong> {request.user.gender}</div>
           </div>
           
           <div style={{ marginBottom: '1rem' }}>
             <strong>Reason:</strong>
-            <p style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: '#f3f4f6', borderRadius: '0.375rem' }}>
+            <p style={{ marginTop: '0.5rem', padding: '1rem', backgroundColor: '#f3f4f6', borderRadius: '0.375rem', fontSize: '0.95rem' }}>
               {request.reason}
             </p>
           </div>
         </div>
         
         <div style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Documents</h3>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem' }}>Documents</h3>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {request.cvUrl && (
-              <a 
-                href={request.cvUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '0.375rem'
-                }}
-              >
-                <FileText size={16} />
-                View CV
+              <a href={request.cvUrl} target="_blank" rel="noopener noreferrer" className={`${styles.actionBtn} ${styles.btnBlue}`} style={{flex: '0 1 auto'}}>
+                <FileText size={16} /> View CV
               </a>
             )}
             {request.documentsUrl && request.documentsUrl.map((doc, idx) => (
-              <a 
-                key={idx}
-                href={doc} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem',
-                  backgroundColor: '#6366f1',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '0.375rem'
-                }}
-              >
-                <FileText size={16} />
-                Document {idx + 1}
+              <a key={idx} href={doc} target="_blank" rel="noopener noreferrer" className={`${styles.actionBtn} ${styles.btnBlue}`} style={{background: '#6366f1', flex: '0 1 auto'}}>
+                <FileText size={16} /> Document {idx + 1}
               </a>
             ))}
           </div>
         </div>
 
-        {/* NEW: Contact Applicant Section */}
         {showContactForm && (
-          <div style={{ marginBottom: '1.5rem', backgroundColor: '#f0f9ff', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #bae6fd' }}>
-            <h4 style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#0369a1' }}>Send Message to Applicant</h4>
+          <div className={styles.contactBox}>
+            <h4>Send Message to Applicant</h4>
             <textarea
               value={contactMessage}
               onChange={(e) => setContactMessage(e.target.value)}
               placeholder="Type your message here... They will receive an email."
               rows={4}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1', marginBottom: '0.5rem', resize: 'vertical' }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => setShowContactForm(false)}
-                style={{ padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
-              >
+              <button onClick={() => setShowContactForm(false)} className={styles.actionBtn} style={{ background: '#e2e8f0', color: '#475569', flex: 'none' }}>
                 Cancel
               </button>
-              <button 
-                onClick={handleSendEmail}
-                disabled={sendingEmail || !contactMessage.trim()}
-                style={{ padding: '0.5rem 1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              >
+              <button onClick={handleSendEmail} disabled={sendingEmail || !contactMessage.trim()} className={`${styles.actionBtn} ${styles.btnBlue}`} style={{ flex: 'none' }}>
                 {sendingEmail ? <Loader2 size={16} className={styles.spinning} /> : <Send size={16} />}
                 Send Email
               </button>
@@ -706,61 +542,18 @@ function ElderRequestModal({ request, onClose, onAction }) {
           </div>
         )}
         
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
           {!showContactForm && (
-            <button 
-              onClick={() => setShowContactForm(true)}
-              style={{ 
-                padding: '0.75rem 1.5rem', 
-                background: '#0ea5e9', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                marginRight: 'auto'
-              }}
-            >
-              <Mail size={16} />
-              Contact Applicant
+            <button onClick={() => setShowContactForm(true)} className={`${styles.actionBtn} ${styles.btnBlue}`} style={{ marginRight: 'auto', flex: 'none' }}>
+              <Mail size={16} /> Contact Applicant
             </button>
           )}
 
-          <button 
-            onClick={() => { onAction(request.user.id, 'deny'); onClose(); }}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
-              background: '#ef4444', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '0.375rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <X size={16} />
-            Deny
+          <button onClick={() => { onAction(request.user.id, 'deny'); onClose(); }} className={`${styles.actionBtn} ${styles.btnRed}`} style={{ flex: 'none' }}>
+            <X size={16} /> Deny
           </button>
-          <button 
-            onClick={() => { onAction(request.user.id, 'approve'); onClose(); }}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
-              background: '#22c55e', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '0.375rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <Check size={16} />
-            Approve
+          <button onClick={() => { onAction(request.user.id, 'approve'); onClose(); }} className={`${styles.actionBtn} ${styles.btnGreen}`} style={{ flex: 'none' }}>
+            <Check size={16} /> Approve
           </button>
         </div>
       </div>
