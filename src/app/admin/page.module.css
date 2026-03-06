@@ -14,21 +14,21 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 1.25rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 0.75rem;
 }
 
 .title {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
-  color: #111827; /* gray-900 */
-  margin-bottom: 0.25rem;
+  color: #111827;
+  margin-bottom: 0.5rem;
   line-height: 1.2;
 }
 
 .subtitle {
-  color: #6b7280; /* gray-600 */
+  color: #6b7280;
   font-size: 0.875rem;
 }
 
@@ -82,31 +82,31 @@
 /* Stats Grid */
 .statsGrid {
   display: grid;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  grid-template-columns: repeat(4, 1fr);
 }
 
-@media (min-width: 640px) {
+@media (max-width: 1024px) {
   .statsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 1024px) {
+@media (max-width: 640px) {
   .statsGrid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
 .statCard {
   background-color: white;
-  padding: 1rem;
+  padding: 1.25rem;
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   text-decoration: none;
   color: inherit;
   border: 1px solid #f3f4f6;
@@ -120,9 +120,9 @@
 }
 
 .statIcon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,14 +137,15 @@
 }
 
 .statValue {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #111827;
   line-height: 1;
+  margin-bottom: 0;
 }
 
 .statLabel {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #6b7280;
   font-weight: 500;
 }
@@ -155,10 +156,10 @@
 }
 
 .sectionTitle {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #111827;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -171,9 +172,15 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
+@media (max-width: 640px) {
+  .actionsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .actionCard {
   background-color: white;
-  padding: 1rem;
+  padding: 1.25rem;
   border-radius: 0.75rem;
   border: 1px solid #f3f4f6;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -199,8 +206,8 @@ button.actionCard {
 }
 
 .actionIcon {
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
@@ -210,7 +217,7 @@ button.actionCard {
 }
 
 .actionTitle {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 0.25rem;
@@ -229,14 +236,20 @@ button.actionCard {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
+@media (max-width: 640px) {
+  .activityGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .activityCard {
   background-color: white;
-  padding: 1rem;
+  padding: 1.25rem;
   border-radius: 0.75rem;
   border: 1px solid #f3f4f6;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
@@ -251,14 +264,15 @@ button.actionCard {
 }
 
 .activityValue {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #111827;
   line-height: 1;
+  margin-bottom: 0;
 }
 
 .activityLabel {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #6b7280;
 }
 
@@ -282,6 +296,13 @@ button.actionCard {
   transition: all 0.2s;
 }
 
+@media (max-width: 640px) {
+  .wisdomCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .wisdomCard:hover {
   background-color: #f9fafb;
   border-color: #e5e7eb;
@@ -297,7 +318,7 @@ button.actionCard {
   justify-content: center;
   font-weight: 700;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 .wisdomContent {
@@ -315,11 +336,23 @@ button.actionCard {
   margin-bottom: 0.25rem;
 }
 
+@media (max-width: 640px) {
+  .wisdomTitle {
+    white-space: normal;
+  }
+}
+
 .wisdomStats {
   display: flex;
   gap: 1rem;
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+@media (max-width: 640px) {
+  .wisdomStats {
+    flex-wrap: wrap;
+  }
 }
 
 .wisdomStats span {
@@ -340,6 +373,12 @@ button.actionCard {
   border-radius: 0.75rem;
   border: 1px solid #f3f4f6;
   text-align: center;
+}
+
+@media (max-width: 640px) {
+  .categoryCard {
+    padding: 0.75rem;
+  }
 }
 
 .categoryName {
