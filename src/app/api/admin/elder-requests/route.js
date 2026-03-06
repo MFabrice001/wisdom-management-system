@@ -73,10 +73,40 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
-    // NEW: Handle direct contact email without changing status
+    // Handle direct contact email AND log to Contacts Dashboard
     if (action === 'contact') {
       if (!customMessage) return NextResponse.json({ error: 'Message is required' }, { status: 400 });
-      await sendCustomEmail(elderRequest.user, subject || 'Message regarding your Elder Application', customMessage);
+      
+      const emailSubject = subject || 'Message regarding your Elder Application';
+      
+      // 1. Send the email securely
+      await sendCustomEmail(elderRequest.user, emailSubject, customMessage);
+      
+      // 2. Log it into the database so it appears in the Contacts Dashboard!
+      try {
+        const contactRecord = await prisma.contactMessage.create({
+          data: {
+            name: elderRequest.user.name,
+            email: elderRequest.user.email,
+            subject: emailSubject,
+            message: 'System Note: Admin initiated direct contact regarding this Elder Application.',
+            status: 'REPLIED', // Marks as replied so it's clear it was handled by an Admin
+            repliedAt: new Date()
+          }
+        });
+
+        // Save the actual message you sent as the reply
+        await prisma.contactReply.create({
+          data: {
+            contactId: contactRecord.id,
+            message: customMessage,
+            adminId: session.user.id
+          }
+        });
+      } catch (dbError) {
+        console.error('Failed to save to contacts database:', dbError);
+      }
+
       return NextResponse.json({ message: 'Email sent successfully' });
     }
 
@@ -121,7 +151,7 @@ export async function POST(request) {
   }
 }
 
-// NEW: Helper function to send direct custom messages to applicants
+// Helper function to send direct custom messages to applicants
 async function sendCustomEmail(user, subject, message) {
   try {
     const transporter = nodemailer.createTransport({
