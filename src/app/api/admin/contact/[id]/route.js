@@ -1,29 +1,44 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 
-export async function PATCH(request, { params }) {
+// This is the PUBLIC route for the homepage Contact Us form.
+// Do NOT add getServerSession here, or regular visitors won't be able to contact you!
+
+export async function POST(request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { name, email, subject, message } = await request.json();
+
+    // 1. Basic Validation
+    if (!name || !email || !subject || !message) {
+      return NextResponse.json(
+        { error: 'All fields are required' },
+        { status: 400 }
+      );
     }
 
-    const { id } = params;
-    const { status } = await request.json();
-
-    const message = await prisma.contactMessage.update({
-      where: { id },
-      data: { 
-        status,
-        repliedAt: status === 'READ' ? new Date() : undefined
+    // 2. Save to the database
+    // By saving it here, your Admin Dashboard's /api/admin/contacts route 
+    // will automatically pick it up and display it!
+    const newContact = await prisma.contactMessage.create({
+      data: {
+        name,
+        email,
+        subject,
+        message,
+        status: 'NEW', // This ensures it gets the orange "New" badge in the admin panel
       }
     });
 
-    return NextResponse.json({ message });
+    return NextResponse.json(
+      { success: true, message: 'Message sent successfully!' },
+      { status: 201 }
+    );
+    
   } catch (error) {
-    console.error('Error updating contact message:', error);
-    return NextResponse.json({ error: 'Failed to update message' }, { status: 500 });
+    console.error('Error saving contact message:', error);
+    return NextResponse.json(
+      { error: 'Failed to send message. Please try again later.' },
+      { status: 500 }
+    );
   }
 }
