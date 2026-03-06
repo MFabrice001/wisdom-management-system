@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { UserCheck, Loader2, CheckCircle, XCircle, Clock, ArrowLeft, Eye, BookOpen, GraduationCap } from 'lucide-react';
+import { UserCheck, Loader2, CheckCircle, XCircle, Clock, ArrowLeft, Eye, BookOpen, GraduationCap, Mail, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import { CATEGORY_QUALIFICATIONS } from '@/lib/categoryQualifications';
 import styles from './page.module.css';
@@ -13,6 +13,10 @@ export default function ElderRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
   const [filter, setFilter] = useState('PENDING');
+
+  // New state for Contacting
+  const [contactModal, setContactModal] = useState({ isOpen: false, request: null, message: '' });
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (session?.user?.role === 'ADMIN') {
@@ -34,18 +38,26 @@ export default function ElderRequestsPage() {
     }
   };
 
-  const handleRequest = async (requestId, action, note = '') => {
+  const handleRequest = async (requestId, action, additionalData = {}) => {
     setProcessing(requestId);
     try {
-      const res = await fetch(`/api/admin/elder-requests/${requestId}`, {
-        method: 'PATCH',
+      // Find the user ID based on the request ID to match your API structure
+      const targetRequest = requests.find(r => r.id === requestId);
+      if (!targetRequest) return;
+
+      const res = await fetch('/api/admin/elder-requests', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, note }),
+        body: JSON.stringify({ userId: targetRequest.user.id, action, ...additionalData }),
       });
 
       if (res.ok) {
-        alert(`Request ${action.toLowerCase()} successfully!`);
-        fetchRequests();
+        if (action === 'contact') {
+          alert('Email sent to applicant successfully!');
+        } else {
+          alert(`Request ${action.toLowerCase()} successfully!`);
+          fetchRequests();
+        }
       } else {
         alert('Failed to process request.');
       }
@@ -54,6 +66,14 @@ export default function ElderRequestsPage() {
     } finally {
       setProcessing(null);
     }
+  };
+
+  const submitContactMessage = async () => {
+    if (!contactModal.message.trim()) return;
+    setSendingEmail(true);
+    await handleRequest(contactModal.request.id, 'contact', { customMessage: contactModal.message });
+    setSendingEmail(false);
+    setContactModal({ isOpen: false, request: null, message: '' });
   };
 
   if (!session || session.user.role !== 'ADMIN') {
@@ -223,9 +243,9 @@ export default function ElderRequestsPage() {
                 </div>
 
                 {request.status === 'PENDING' && (
-                  <div className={styles.actions}>
+                  <div className={styles.actions} style={{ flexWrap: 'wrap' }}>
                     <button
-                      onClick={() => handleRequest(request.id, 'APPROVED')}
+                      onClick={() => handleRequest(request.id, 'approve')}
                       disabled={processing === request.id}
                       className={styles.approveBtn}
                     >
@@ -235,13 +255,37 @@ export default function ElderRequestsPage() {
                     <button
                       onClick={() => {
                         const note = prompt('Reason for rejection (optional):');
-                        if (note !== null) handleRequest(request.id, 'REJECTED', note);
+                        if (note !== null) handleRequest(request.id, 'deny', { note });
                       }}
                       disabled={processing === request.id}
                       className={styles.rejectBtn}
                     >
                       <XCircle size={16} />
                       Reject
+                    </button>
+                    
+                    {/* Contact Button */}
+                    <button
+                      onClick={() => setContactModal({ isOpen: true, request, message: '' })}
+                      style={{ 
+                        padding: '0.5rem 1rem', 
+                        background: '#0ea5e9', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '0.375rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        width: '100%',
+                        justifyContent: 'center',
+                        marginTop: '0.5rem'
+                      }}
+                    >
+                      <Mail size={16} />
+                      Contact Applicant
                     </button>
                   </div>
                 )}
@@ -256,6 +300,56 @@ export default function ElderRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* Contact Modal */}
+      {contactModal.isOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white', borderRadius: '0.5rem', padding: '2rem',
+            maxWidth: '500px', width: '90%'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Message {contactModal.request?.user.name}</h2>
+              <button onClick={() => setContactModal({ isOpen: false, request: null, message: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <p style={{ marginBottom: '1rem', color: '#4b5563', fontSize: '0.875rem' }}>
+              Send an email directly to the applicant to ask for more information or clarification regarding their application.
+            </p>
+
+            <textarea
+              value={contactModal.message}
+              onChange={(e) => setContactModal({ ...contactModal, message: e.target.value })}
+              placeholder="Type your message here..."
+              rows={5}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', marginBottom: '1.5rem', resize: 'vertical' }}
+            />
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setContactModal({ isOpen: false, request: null, message: '' })}
+                style={{ padding: '0.5rem 1rem', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={submitContactMessage}
+                disabled={sendingEmail || !contactModal.message.trim()}
+                style={{ padding: '0.5rem 1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                {sendingEmail ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+                Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

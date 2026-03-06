@@ -52,9 +52,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId, action } = await request.json();
+    const { userId, action, customMessage, subject } = await request.json();
 
-    if (!userId || !action || !['approve', 'deny'].includes(action)) {
+    if (!userId || !action || !['approve', 'deny', 'contact'].includes(action)) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
@@ -73,6 +73,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
+    // NEW: Handle direct contact email without changing status
+    if (action === 'contact') {
+      if (!customMessage) return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+      await sendCustomEmail(elderRequest.user, subject || 'Message regarding your Elder Application', customMessage);
+      return NextResponse.json({ message: 'Email sent successfully' });
+    }
+
     const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
 
     // Update elder request status
@@ -87,7 +94,6 @@ export async function POST(request) {
 
     // If approved, update user role to ELDER and set temporary password
     if (action === 'approve') {
-      // Generate a secure temporary password that meets requirements
       const tempPassword = 'Elder' + Math.floor(Math.random() * 9000 + 1000);
       const bcrypt = require('bcryptjs');
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
@@ -98,20 +104,56 @@ export async function POST(request) {
           role: 'ELDER',
           password: hashedPassword,
           requirePasswordChange: true,
-          approvedCategory: elderRequest.category // <-- FIX: Saves the category to the User model
+          approvedCategory: elderRequest.category 
         }
       });
       
       elderRequest.user.tempPassword = tempPassword;
     }
 
-    // Send email notification
+    // Send status notification email
     await sendNotificationEmail(elderRequest.user, action);
 
     return NextResponse.json({ message: 'Request processed successfully' });
   } catch (error) {
     console.error('Error processing elder request:', error);
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+  }
+}
+
+// NEW: Helper function to send direct custom messages to applicants
+async function sendCustomEmail(user, subject, message) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_EMAIL,
+        pass: process.env.SMTP_PASSWORD
+      }
+    });
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="color: #2563eb; text-align: center;">Update: Your Elder Application</h2>
+        <p>Dear ${user.name},</p>
+        <p>The Umurage Wubwenge administration has sent you a message regarding your pending Elder Application:</p>
+        <div style="background-color: #f8fafc; padding: 20px; border-left: 4px solid #2563eb; margin: 20px 0;">
+          <p style="white-space: pre-wrap; margin: 0;">${message}</p>
+        </div>
+        <p>Best regards,<br><strong>Umurage Wubwenge Team</strong></p>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_EMAIL,
+      to: user.email,
+      subject: subject,
+      html: htmlContent
+    });
+    
+    console.log(`Custom email sent successfully to ${user.email}`);
+  } catch (error) {
+    console.error('Error sending custom email:', error);
   }
 }
 
@@ -188,6 +230,5 @@ async function sendNotificationEmail(user, action) {
     console.log(`Email sent successfully to ${user.email}`);
   } catch (error) {
     console.error('Error sending email:', error);
-    // Don't throw error to prevent API failure
   }
 }

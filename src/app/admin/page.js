@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Users, BookOpen, MessageCircle, Heart, TrendingUp, Award,
-  ArrowUpRight, Loader2, Settings, BarChart3, RefreshCw, FileText, Eye, Calendar, Lightbulb, UserCheck, X, Check
+  ArrowUpRight, Loader2, Settings, BarChart3, RefreshCw, FileText, Eye, Calendar, Lightbulb, UserCheck, X, Check, Mail, Send
 } from 'lucide-react';
 import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import { useLanguage } from '@/context/LanguageContext';
@@ -69,17 +69,24 @@ export default function AdminDashboard() {
     await fetchStats();
   };
 
-  const handleElderRequest = async (userId, action) => {
+  const handleElderRequest = async (userId, action, additionalData = {}) => {
     try {
       const response = await fetch('/api/admin/elder-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, action })
+        body: JSON.stringify({ userId, action, ...additionalData })
       });
       
       if (response.ok) {
-        setElderRequests(prev => prev.filter(req => req.user.id !== userId));
-        setSelectedRequest(null);
+        if (action !== 'contact') {
+          // Only remove them from the list if we approved/denied them
+          setElderRequests(prev => prev.filter(req => req.user.id !== userId));
+          setSelectedRequest(null);
+        } else {
+          alert("Message sent to applicant successfully!");
+        }
+      } else {
+        alert("Failed to process request.");
       }
     } catch (error) {
       console.error('Error handling elder request:', error);
@@ -163,6 +170,13 @@ export default function AdminDashboard() {
                 Quick Actions
               </h2>
               <div className={styles.actionsGrid} style={{ gap: '1rem' }}>
+                <ActionCard
+                  icon={Mail}
+                  title="Contacts"
+                  description="View user messages"
+                  link="/admin/contacts"
+                  color="#0ea5e9"
+                />
                 <ActionCard
                   icon={Award}
                   title="Manage Polls"
@@ -465,24 +479,6 @@ function ElderRequestCard({ request, onAction, onView }) {
           <Check size={14} />
           Approve
         </button>
-        <button 
-          onClick={() => onAction(request.user.id, 'deny')}
-          style={{ 
-            padding: '0.5rem', 
-            background: '#ef4444', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            fontSize: '0.75rem'
-          }}
-        >
-          <X size={14} />
-          Deny
-        </button>
       </div>
     </div>
   );
@@ -558,8 +554,24 @@ function HistoryModal({ history, onClose }) {
   );
 }
 
-// Elder Request Modal Component
+// Elder Request Modal Component (Updated with Contact Form)
 function ElderRequestModal({ request, onClose, onAction }) {
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactMessage, setContactMessage] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const handleSendEmail = async () => {
+    if (!contactMessage.trim()) return;
+    setSendingEmail(true);
+    await onAction(request.user.id, 'contact', { 
+      customMessage: contactMessage,
+      subject: 'Message regarding your Elder Application'
+    });
+    setSendingEmail(false);
+    setShowContactForm(false);
+    setContactMessage('');
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -663,8 +675,59 @@ function ElderRequestModal({ request, onClose, onAction }) {
             ))}
           </div>
         </div>
+
+        {/* NEW: Contact Applicant Section */}
+        {showContactForm && (
+          <div style={{ marginBottom: '1.5rem', backgroundColor: '#f0f9ff', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #bae6fd' }}>
+            <h4 style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#0369a1' }}>Send Message to Applicant</h4>
+            <textarea
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
+              placeholder="Type your message here... They will receive an email."
+              rows={4}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1', marginBottom: '0.5rem', resize: 'vertical' }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setShowContactForm(false)}
+                style={{ padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSendEmail}
+                disabled={sendingEmail || !contactMessage.trim()}
+                style={{ padding: '0.5rem 1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                {sendingEmail ? <Loader2 size={16} className={styles.spinning} /> : <Send size={16} />}
+                Send Email
+              </button>
+            </div>
+          </div>
+        )}
         
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+          {!showContactForm && (
+            <button 
+              onClick={() => setShowContactForm(true)}
+              style={{ 
+                padding: '0.75rem 1.5rem', 
+                background: '#0ea5e9', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginRight: 'auto'
+              }}
+            >
+              <Mail size={16} />
+              Contact Applicant
+            </button>
+          )}
+
           <button 
             onClick={() => { onAction(request.user.id, 'deny'); onClose(); }}
             style={{ 
@@ -680,7 +743,7 @@ function ElderRequestModal({ request, onClose, onAction }) {
             }}
           >
             <X size={16} />
-            Deny Application
+            Deny
           </button>
           <button 
             onClick={() => { onAction(request.user.id, 'approve'); onClose(); }}
@@ -697,7 +760,7 @@ function ElderRequestModal({ request, onClose, onAction }) {
             }}
           >
             <Check size={16} />
-            Approve Application
+            Approve
           </button>
         </div>
       </div>
