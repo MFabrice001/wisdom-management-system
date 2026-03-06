@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+
 export async function POST(request) {
   try {
     const { name, email, subject, message } = await request.json();
@@ -10,7 +13,7 @@ export async function POST(request) {
     }
 
     const contact = await prisma.contactMessage.create({
-      data: { name, email, subject, message }
+      data: { name, email, subject, message, status: 'NEW' }
     });
 
     return NextResponse.json({ success: true, contact }, { status: 201 });

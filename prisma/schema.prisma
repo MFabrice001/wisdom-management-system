@@ -361,16 +361,29 @@ enum RequestStatus {
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   name      String
   email     String
   subject   String
   message   String
-  status    String   @default("UNREAD")
+  status    String         @default("NEW")
   repliedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime       @default(now())
+  replies   ContactReply[]
 
   @@index([status])
   @@index([createdAt])
   @@map("contact_messages")
+}
+
+model ContactReply {
+  id        String         @id @default(cuid())
+  contactId String
+  contact   ContactMessage @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  message   String
+  adminId   String
+  createdAt DateTime       @default(now())
+
+  @@index([contactId])
+  @@map("contact_replies")
 }
