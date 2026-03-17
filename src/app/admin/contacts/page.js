@@ -48,6 +48,12 @@ export default function ContactsAdmin() {
         const data = await response.json();
         setContacts(data.contacts);
         setPagination(data.pagination);
+        
+        // If a contact is currently selected (e.g. after a reply), refresh its data in the modal
+        if (selectedContact) {
+          const updatedContact = data.contacts.find(c => c.id === selectedContact.id);
+          if (updatedContact) setSelectedContact(updatedContact);
+        }
       }
     } catch (error) {
       console.error('Error fetching contacts:', error);
@@ -65,10 +71,12 @@ export default function ContactsAdmin() {
       });
       
       if (response.ok) {
-        fetchContacts();
         if (action === 'reply') {
           setReplyMessage('');
-          setSelectedContact(null);
+          // Refresh data so the new reply shows up in the modal
+          await fetchContacts(); 
+        } else {
+          fetchContacts();
         }
       }
     } catch (error) {
@@ -244,14 +252,14 @@ export default function ContactsAdmin() {
         {/* Contact Detail Modal */}
         {selectedContact && (
           <div className={styles.modal}>
-            <div className={styles.modalContent}>
+            <div className={styles.modalContent} style={{ maxWidth: '800px' }}>
               <div className={styles.modalHeader}>
                 <h2>Contact Details</h2>
                 <button onClick={() => setSelectedContact(null)}>×</button>
               </div>
               
               <div className={styles.modalBody}>
-                <div className={styles.contactDetails}>
+                <div className={styles.contactDetails} style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
                   <div className={styles.detailRow}>
                     <strong>Name:</strong> {selectedContact.name}
                   </div>
@@ -268,7 +276,7 @@ export default function ContactsAdmin() {
                     <strong>Status:</strong> 
                     <span 
                       className={styles.status}
-                      style={{ backgroundColor: getStatusColor(selectedContact.status) }}
+                      style={{ backgroundColor: getStatusColor(selectedContact.status), marginLeft: '0.5rem' }}
                     >
                       {getStatusText(selectedContact.status)}
                     </span>
@@ -276,24 +284,46 @@ export default function ContactsAdmin() {
                 </div>
                 
                 <div className={styles.messageSection}>
-                  <h3>Message</h3>
-                  <div className={styles.messageContent}>
-                    {selectedContact.message}
+                  <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                    <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase' }}>Original Message:</strong>
+                    <div style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap', color: '#1e293b' }}>
+                      {selectedContact.message}
+                    </div>
                   </div>
+
+                  {/* FIX: Display Conversation History (Replies) */}
+                  {selectedContact.replies && selectedContact.replies.length > 0 && (
+                    <div style={{ marginTop: '1.5rem' }}>
+                      <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase' }}>Your Sent Replies:</strong>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                        {selectedContact.replies.map((reply, idx) => (
+                          <div key={reply.id || idx} style={{ padding: '1rem', backgroundColor: '#eff6ff', borderRadius: '0.5rem', borderLeft: '4px solid #3b82f6' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem', color: '#64748b' }}>
+                              <span style={{ fontWeight: 'bold', color: '#1d4ed8' }}>Admin Reply</span>
+                              <span>{new Date(reply.createdAt).toLocaleString()}</span>
+                            </div>
+                            <p style={{ whiteSpace: 'pre-wrap', margin: 0, color: '#1e293b' }}>{reply.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
-                <div className={styles.replySection}>
-                  <h3>Send Reply</h3>
+                <div className={styles.replySection} style={{ marginTop: '2rem' }}>
+                  <h3>Send a New Reply</h3>
                   <textarea
                     value={replyMessage}
                     onChange={(e) => setReplyMessage(e.target.value)}
                     placeholder="Type your reply here..."
                     rows={4}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', marginBottom: '1rem' }}
                   />
                   <button
                     onClick={handleReply}
                     disabled={!replyMessage.trim() || sending}
                     className={styles.sendButton}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
                   >
                     {sending ? (
                       <Loader2 size={16} className={styles.spinning} />

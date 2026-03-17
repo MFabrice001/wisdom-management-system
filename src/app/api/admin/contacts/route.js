@@ -41,6 +41,10 @@ export async function GET(request) {
         include: {
           _count: {
             select: { replies: true }
+          },
+          // FIX: Actually fetch the replies so we can display them!
+          replies: {
+            orderBy: { createdAt: 'asc' }
           }
         }
       }),
@@ -116,6 +120,8 @@ export async function POST(request) {
     }
 
     if (action === 'delete') {
+      // Because of onDelete: Cascade in Prisma (if you set it up), deleting the message 
+      // should also delete the replies. Otherwise, you might need to delete replies first.
       await prisma.contactMessage.delete({
         where: { id: contactId }
       });
@@ -132,7 +138,8 @@ export async function POST(request) {
 
 async function sendReplyEmail(contact, replyMessage) {
   try {
-    const transporter = nodemailer.createTransporter({
+    // FIX: Changed from createTransporter to createTransport
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.SMTP_EMAIL,
@@ -156,7 +163,7 @@ async function sendReplyEmail(contact, replyMessage) {
           <p style="color: #64748b; font-style: italic;">${contact.message}</p>
         </div>
         
-        <p>If you have any further questions, please don't hesitate to contact us again.</p>
+        <p>If you have any further questions, please don't hesitate to contact us again via the website.</p>
         <p>Best regards,<br><strong>Umurage Wubwenge Team</strong></p>
       </div>
     `;
