@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import nodemailer from 'nodemailer';
-
-const prisma = new PrismaClient();
 
 export async function GET(request) {
   try {
@@ -32,22 +30,29 @@ export async function GET(request) {
       ];
     }
 
-    const [contacts, total] = await Promise.all([
+    const [rawContacts, total] = await Promise.all([
       prisma.contactMessage.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          _count: {
-            select: { replies: true }
-          },
-          // FIX: Use the safest method to fetch replies to prevent Prisma crashes
-          replies: true
+          replies: {
+            orderBy: { createdAt: 'asc' }
+          }
         }
       }),
       prisma.contactMessage.count({ where })
     ]);
+
+    // Map over the contacts to calculate the reply count safely 
+    // without causing a Prisma database crash.
+    const contacts = rawContacts.map(contact => ({
+      ...contact,
+      _count: {
+        replies: contact.replies.length
+      }
+    }));
 
     return NextResponse.json({
       contacts,
@@ -118,8 +123,6 @@ export async function POST(request) {
     }
 
     if (action === 'delete') {
-      // Because of onDelete: Cascade in Prisma (if you set it up), deleting the message 
-      // should also delete the replies. Otherwise, you might need to delete replies first.
       await prisma.contactMessage.delete({
         where: { id: contactId }
       });
