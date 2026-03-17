@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import prisma from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
+
+const prisma = new PrismaClient();
 
 export async function GET(request) {
   try {
@@ -30,29 +32,20 @@ export async function GET(request) {
       ];
     }
 
-    const [rawContacts, total] = await Promise.all([
+    const [contacts, total] = await Promise.all([
       prisma.contactMessage.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          replies: {
-            orderBy: { createdAt: 'asc' }
+          _count: {
+            select: { replies: true }
           }
         }
       }),
       prisma.contactMessage.count({ where })
     ]);
-
-    // Map over the contacts to calculate the reply count safely 
-    // without causing a Prisma database crash.
-    const contacts = rawContacts.map(contact => ({
-      ...contact,
-      _count: {
-        replies: contact.replies.length
-      }
-    }));
 
     return NextResponse.json({
       contacts,
@@ -139,7 +132,7 @@ export async function POST(request) {
 
 async function sendReplyEmail(contact, replyMessage) {
   try {
-    const transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransporter({
       service: 'gmail',
       auth: {
         user: process.env.SMTP_EMAIL,
@@ -163,7 +156,7 @@ async function sendReplyEmail(contact, replyMessage) {
           <p style="color: #64748b; font-style: italic;">${contact.message}</p>
         </div>
         
-        <p>If you have any further questions, please don't hesitate to contact us again via the website.</p>
+        <p>If you have any further questions, please don't hesitate to contact us again.</p>
         <p>Best regards,<br><strong>Umurage Wubwenge Team</strong></p>
       </div>
     `;
