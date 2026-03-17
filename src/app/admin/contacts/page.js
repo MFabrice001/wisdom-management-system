@@ -16,6 +16,8 @@ export default function ContactsAdmin() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [conversationMessages, setConversationMessages] = useState([]);
+  const [loadingConversation, setLoadingConversation] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [filters, setFilters] = useState({
@@ -56,6 +58,30 @@ export default function ContactsAdmin() {
     }
   };
 
+  const fetchConversationDetails = async (conversationId) => {
+    try {
+      setLoadingConversation(true);
+      const response = await fetch(`/api/admin/contacts/conversation?id=${conversationId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setConversationMessages(data.conversation.messages || []);
+      }
+    } catch (error) {
+      console.error('Error fetching conversation:', error);
+    } finally {
+      setLoadingConversation(false);
+    }
+  };
+
+  const handleViewContact = async (contact) => {
+    setSelectedContact(contact);
+    if (contact.isConversation && contact.conversationId) {
+      await fetchConversationDetails(contact.conversationId);
+    } else {
+      setConversationMessages([]);
+    }
+  };
+
   const handleAction = async (contactId, action, data = {}) => {
     try {
       const response = await fetch('/api/admin/contacts', {
@@ -68,7 +94,12 @@ export default function ContactsAdmin() {
         fetchContacts();
         if (action === 'reply') {
           setReplyMessage('');
-          setSelectedContact(null);
+          // If replying to a conversation, refresh conversation messages
+          if (selectedContact?.isConversation && selectedContact?.conversationId) {
+            await fetchConversationDetails(selectedContact.conversationId);
+          } else {
+            setSelectedContact(null);
+          }
         }
       }
     } catch (error) {
@@ -120,7 +151,7 @@ export default function ContactsAdmin() {
               Back
             </button>
             <h1 className={styles.title}>Contact Management</h1>
-            <p className={styles.subtitle}>Manage contact form submissions</p>
+            <p className={styles.subtitle}>Manage contact form submissions and elder applicant conversations</p>
           </div>
         </div>
 
@@ -161,7 +192,7 @@ export default function ContactsAdmin() {
               <div key={contact.id} className={styles.contactCard}>
                 <div className={styles.contactHeader}>
                   <div className={styles.contactInfo}>
-                    <h3>{contact.name}</h3>
+                    <h3>{contact.name} {contact.isConversation && <span style={{ fontSize: '10px', background: '#0ea5e9', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '8px' }}>ELDER CHAT</span>}</h3>
                     <p>{contact.email}</p>
                   </div>
                   <div className={styles.contactMeta}>
@@ -185,11 +216,11 @@ export default function ContactsAdmin() {
                 
                 <div className={styles.contactActions}>
                   <button
-                    onClick={() => setSelectedContact(contact)}
+                    onClick={() => handleViewContact(contact)}
                     className={styles.viewButton}
                   >
                     <Eye size={16} />
-                    View Details
+                    {contact.isConversation ? 'View Conversation' : 'View Details'}
                   </button>
                   
                   {contact.status === 'NEW' && (
@@ -246,8 +277,8 @@ export default function ContactsAdmin() {
           <div className={styles.modal}>
             <div className={styles.modalContent}>
               <div className={styles.modalHeader}>
-                <h2>Contact Details</h2>
-                <button onClick={() => setSelectedContact(null)}>×</button>
+                <h2>{selectedContact.isConversation ? 'Conversation with Elder Applicant' : 'Contact Details'}</h2>
+                <button onClick={() => { setSelectedContact(null); setConversationMessages([]); }}>×</button>
               </div>
               
               <div className={styles.modalBody}>
@@ -258,12 +289,16 @@ export default function ContactsAdmin() {
                   <div className={styles.detailRow}>
                     <strong>Email:</strong> {selectedContact.email}
                   </div>
-                  <div className={styles.detailRow}>
-                    <strong>Subject:</strong> {selectedContact.subject}
-                  </div>
-                  <div className={styles.detailRow}>
-                    <strong>Date:</strong> {new Date(selectedContact.createdAt).toLocaleString()}
-                  </div>
+                  {!selectedContact.isConversation && (
+                    <>
+                      <div className={styles.detailRow}>
+                        <strong>Subject:</strong> {selectedContact.subject}
+                      </div>
+                      <div className={styles.detailRow}>
+                        <strong>Date:</strong> {new Date(selectedContact.createdAt).toLocaleString()}
+                      </div>
+                    </>
+                  )}
                   <div className={styles.detailRow}>
                     <strong>Status:</strong> 
                     <span 
@@ -275,12 +310,48 @@ export default function ContactsAdmin() {
                   </div>
                 </div>
                 
-                <div className={styles.messageSection}>
-                  <h3>Message</h3>
-                  <div className={styles.messageContent}>
-                    {selectedContact.message}
+                {selectedContact.isConversation ? (
+                  /* Show conversation messages */
+                  <div className={styles.messageSection}>
+                    <h3>Conversation Messages</h3>
+                    {loadingConversation ? (
+                      <div className={styles.loading}>
+                        <Loader2 className={styles.spinner} size={24} />
+                      </div>
+                    ) : conversationMessages.length > 0 ? (
+                      <div className={styles.messageContent} style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {conversationMessages.map((msg) => (
+                          <div 
+                            key={msg.id} 
+                            style={{ 
+                              marginBottom: '12px',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              backgroundColor: msg.senderId === session?.user?.id ? '#e0f2fe' : '#f3f4f6',
+                              marginLeft: msg.senderId === session?.user?.id ? '40px' : '0',
+                              marginRight: msg.senderId === session?.user?.id ? '0' : '40px'
+                            }}
+                          >
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                              <strong>{msg.sender?.name || 'Unknown'}</strong> - {new Date(msg.createdAt).toLocaleString()}
+                            </div>
+                            <div>{msg.content}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ color: '#6b7280', fontStyle: 'italic' }}>No messages in this conversation yet.</p>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  /* Show regular contact message */
+                  <div className={styles.messageSection}>
+                    <h3>Message</h3>
+                    <div className={styles.messageContent}>
+                      {selectedContact.message}
+                    </div>
+                  </div>
+                )}
                 
                 <div className={styles.replySection}>
                   <h3>Send Reply</h3>
