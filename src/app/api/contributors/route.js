@@ -18,15 +18,14 @@ export async function GET(request) {
         _count: {
           select: {
             wisdoms: true,
-            comments: true,
-            forumReplies: true
           }
         },
         wisdoms: {
           select: {
             _count: {
               select: {
-                likes: true
+                likes: true,
+                comments: true // <-- ADDED: Now we fetch the comments on their wisdom
               }
             }
           }
@@ -34,8 +33,8 @@ export async function GET(request) {
       }
     });
 
-    // Calculate total likes and total comments for each contributor
-    const contributorsWithLikes = contributors.map(contributor => ({
+    // Calculate total likes and total comments received for each contributor
+    const contributorsWithStats = contributors.map(contributor => ({
       ...contributor,
       totalLikes: contributor.wisdoms.reduce(
         (sum, wisdom) => sum + wisdom._count.likes,
@@ -43,12 +42,16 @@ export async function GET(request) {
       ),
       _count: {
         wisdoms: contributor._count.wisdoms,
-        comments: contributor._count.comments + contributor._count.forumReplies
+        // <-- CHANGED: Now we sum up the comments their wisdom posts RECEIVED
+        comments: contributor.wisdoms.reduce(
+          (sum, wisdom) => sum + wisdom._count.comments,
+          0
+        )
       },
-      wisdoms: undefined // Remove wisdoms array from response
+      wisdoms: undefined // Remove wisdoms array from response to keep it clean
     }));
 
-    return NextResponse.json({ contributors: contributorsWithLikes });
+    return NextResponse.json({ contributors: contributorsWithStats });
   } catch (error) {
     console.error('Error fetching contributors:', error);
     return NextResponse.json(
