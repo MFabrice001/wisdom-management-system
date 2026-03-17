@@ -42,10 +42,8 @@ export async function GET(request) {
           _count: {
             select: { replies: true }
           },
-          // FIX: Actually fetch the replies so we can display them!
-          replies: {
-            orderBy: { createdAt: 'asc' }
-          }
+          // FIX: Use the safest method to fetch replies to prevent Prisma crashes
+          replies: true
         }
       }),
       prisma.contactMessage.count({ where })
@@ -138,7 +136,6 @@ export async function POST(request) {
 
 async function sendReplyEmail(contact, replyMessage) {
   try {
-    // FIX: Changed from createTransporter to createTransport
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
