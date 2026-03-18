@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { Camera, Mic, Eye, AlertTriangle, Award, Globe } from 'lucide-react';
+import { Camera, Mic, Eye, AlertTriangle, Award, Globe, ArrowLeft } from 'lucide-react';
 import styles from './ProctoredQuiz.module.css';
 
 export default function ProctoredQuiz() {
@@ -62,7 +62,8 @@ export default function ProctoredQuiz() {
       noMoreAttempts: 'No more attempts remaining',
       used: 'used',
       question: 'Question',
-      time: 'Time'
+      time: 'Time',
+      changeLanguage: 'Change Language'
     },
     rw: {
       title: 'Ikizamini Gikurikiranwa',
@@ -91,7 +92,8 @@ export default function ProctoredQuiz() {
       noMoreAttempts: 'Nta bigerageza bisigaye',
       used: 'byakoreshejwe',
       question: 'Ikibazo',
-      time: 'Igihe'
+      time: 'Igihe',
+      changeLanguage: 'Hindura Ururimi'
     }
   };
 
@@ -374,9 +376,34 @@ export default function ProctoredQuiz() {
     return (
       <div className={styles.setupContainer}>
         <div className={styles.setupCard}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <button onClick={() => setStep('LANGUAGE')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.9rem', textDecoration: 'underline' }}>
-              ← Change Language
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
+            <button 
+              onClick={() => setStep('LANGUAGE')} 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                background: '#f3f4f6', 
+                border: '1px solid #e5e7eb', 
+                color: '#4b5563', 
+                cursor: 'pointer', 
+                fontSize: '0.875rem', 
+                fontWeight: '600',
+                padding: '0.5rem 1rem',
+                borderRadius: '9999px',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = '#e5e7eb';
+                e.currentTarget.style.color = '#111827';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.color = '#4b5563';
+              }}
+            >
+              <ArrowLeft size={16} />
+              {t.changeLanguage}
             </button>
           </div>
           
