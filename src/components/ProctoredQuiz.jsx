@@ -2,27 +2,29 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { Camera, Mic, Eye, AlertTriangle, Award } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { Camera, Mic, Eye, AlertTriangle, Award, Globe } from 'lucide-react';
 import styles from './ProctoredQuiz.module.css';
 
-// Accept the language prop from the QuizPage selection screen!
-export default function ProctoredQuiz({ language: propLanguage }) {
+export default function ProctoredQuiz() {
   const { data: session } = useSession();
   
-  // Use the language selected on the quiz screen, or fallback to the site's global language
-  const { language: contextLanguage } = useLanguage();
-  const activeLanguage = propLanguage || contextLanguage || 'en';
-  
-  const [isSetupComplete, setIsSetupComplete] = useState(false);
-  const [cameraStream, setCameraStream] = useState(null);
+  // We use refs to track state inside the unmount cleanup function
+  const stepRef = useRef('LANGUAGE'); 
+  const questionsLengthRef = useRef(7); // Fallback to 7
+  const cameraStreamRef = useRef(null);
+
+  const [step, setStepState] = useState('LANGUAGE'); // LANGUAGE -> SETUP -> QUIZ -> RESULTS
+  const setStep = (newStep) => {
+    stepRef.current = newStep;
+    setStepState(newStep);
+  };
+
+  const [quizLanguage, setQuizLanguage] = useState('en');
   const [tabSwitches, setTabSwitches] = useState(0);
   const [violations, setViolations] = useState([]);
-  const [quizStarted, setQuizStarted] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
-  const [showResults, setShowResults] = useState(false);
   const [certificateEligible, setCertificateEligible] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const [timerExpired, setTimerExpired] = useState(false);
@@ -93,9 +95,9 @@ export default function ProctoredQuiz({ language: propLanguage }) {
     }
   };
 
-  const t = translations[activeLanguage] || translations.en;
+  const t = translations[quizLanguage] || translations.en;
 
-  // Fetch attempt count on component mount
+  // 1. Fetch attempt count on component mount
   useEffect(() => {
     const fetchAttemptCount = async () => {
       try {
@@ -112,10 +114,50 @@ export default function ProctoredQuiz({ language: propLanguage }) {
     }
   }, [session]);
 
+  // 2. ANTI-ABANDONMENT SYSTEM: Deduct attempt if they hit "Back" or close tab during the quiz
   useEffect(() => {
-    // Timer countdown
+    const handleBeforeUnload = (e) => {
+      if (stepRef.current === 'QUIZ') {
+        e.preventDefault();
+        e.returnValue = ''; // Triggers the browser's "Are you sure you want to leave?" warning
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // This cleanup runs when the component unmounts (e.g., user clicks a navigation link or Back button)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      
+      if (stepRef.current === 'QUIZ') {
+        // Automatically submit a failed attempt in the background
+        fetch('/api/citizen/quiz/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            score: 0,
+            totalQuestions: questionsLengthRef.current,
+            percentage: 0,
+            timeSpentMinutes: 0,
+            tabSwitches: 0,
+            violations: ['User exited the quiz prematurely'],
+            certificateEligible: false
+          }),
+          keepalive: true // Ensures the request finishes even if the page unloads
+        }).catch(console.error);
+      }
+
+      // Stop camera if leaving
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // 3. Timer countdown
+  useEffect(() => {
     let timer;
-    if (quizStarted && !showResults && timeLeft > 0) {
+    if (step === 'QUIZ' && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -127,16 +169,15 @@ export default function ProctoredQuiz({ language: propLanguage }) {
         });
       }, 1000);
     }
-    
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [quizStarted, showResults, timeLeft]);
+  }, [step, timeLeft]);
 
+  // 4. Monitor tab switches
   useEffect(() => {
-    // Monitor tab switches
     const handleVisibilityChange = () => {
-      if (quizStarted && document.hidden) {
+      if (step === 'QUIZ' && document.hidden) {
         const newCount = tabSwitches + 1;
         setTabSwitches(newCount);
         
@@ -148,7 +189,7 @@ export default function ProctoredQuiz({ language: propLanguage }) {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [quizStarted, tabSwitches]);
+  }, [step, tabSwitches]);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -158,11 +199,8 @@ export default function ProctoredQuiz({ language: propLanguage }) {
 
   const setupCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: true, 
-        audio: true 
-      });
-      setCameraStream(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      cameraStreamRef.current = stream; // Save to ref for cleanup
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -174,7 +212,6 @@ export default function ProctoredQuiz({ language: propLanguage }) {
   };
 
   const startQuiz = async () => {
-    // Check attempt count
     try {
       const attemptsRes = await fetch('/api/citizen/quiz/attempts');
       const attemptsData = await attemptsRes.json();
@@ -183,7 +220,6 @@ export default function ProctoredQuiz({ language: propLanguage }) {
         alert(`You have reached the maximum of ${maxAttempts} quiz attempts.`);
         return;
       }
-      
       setAttemptCount(attemptsData.attemptCount);
     } catch (error) {
       console.error('Failed to check attempts:', error);
@@ -193,14 +229,14 @@ export default function ProctoredQuiz({ language: propLanguage }) {
     if (!cameraReady) return;
 
     try {
-      // NOW IT FETCHES THE QUESTIONS FOR THE SELECTED LANGUAGE!
-      const res = await fetch(`/api/citizen/quiz?lang=${activeLanguage}`);
+      const res = await fetch(`/api/citizen/quiz?lang=${quizLanguage}`);
       const data = await res.json();
       setQuestions(data.questions);
-      setQuizStarted(true);
-      setTimeLeft(300); // Reset timer to 5 minutes
+      questionsLengthRef.current = data.questions.length;
+      
+      setTimeLeft(300);
       startTimeRef.current = new Date();
-      setIsSetupComplete(true);
+      setStep('QUIZ');
     } catch (error) {
       alert('Failed to load quiz questions.');
     }
@@ -216,76 +252,50 @@ export default function ProctoredQuiz({ language: propLanguage }) {
   };
 
   const finishQuiz = async () => {
+    // Change step immediately so unmount cleanup doesn't fire a double-fail
+    setStep('RESULTS'); 
+
     const timeSpentMinutes = Math.ceil((new Date() - startTimeRef.current) / 60000);
-    
+    let finalAnswers = [...answers];
+    let finalViolations = [...violations];
+
     if (timerExpired) {
-      // Auto-submit current answers when time expires
-      const currentAnswers = [...answers];
-      // Fill remaining questions with empty answers
-      while (currentAnswers.length < questions.length) {
-        currentAnswers.push(null);
+      while (finalAnswers.length < questions.length) {
+        finalAnswers.push(null);
       }
-      
-      const score = currentAnswers.reduce((acc, answer, index) => {
-        return acc + (answer === questions[index]?.correctAnswer ? 1 : 0);
-      }, 0);
-      
-      const percentage = (score / questions.length) * 100;
-      const eligible = percentage >= 70 && tabSwitches <= 2 && violations.length === 0;
-      
-      setCertificateEligible(eligible);
-      
-      // Submit quiz attempt
-      await fetch('/api/citizen/quiz/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          score,
-          totalQuestions: questions.length,
-          percentage,
-          timeSpentMinutes: 5,
-          tabSwitches,
-          violations: [...violations, 'Time expired - quiz auto-submitted'],
-          certificateEligible: eligible,
-          timeExpired: true
-        })
-      });
-    } else {
-      const score = answers.reduce((acc, answer, index) => {
-        return acc + (answer === questions[index]?.correctAnswer ? 1 : 0);
-      }, 0);
-      
-      const percentage = (score / questions.length) * 100;
-      const eligible = percentage >= 70 && tabSwitches <= 2 && violations.length === 0;
-      
-      setCertificateEligible(eligible);
-      
-      // Submit quiz attempt
-      await fetch('/api/citizen/quiz/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          score,
-          totalQuestions: questions.length,
-          percentage,
-          timeSpentMinutes,
-          tabSwitches,
-          violations,
-          certificateEligible: eligible
-        })
-      });
+      finalViolations.push('Time expired - quiz auto-submitted');
     }
+
+    const score = finalAnswers.reduce((acc, answer, index) => {
+      return acc + (answer === questions[index]?.correctAnswer ? 1 : 0);
+    }, 0);
     
-    setShowResults(true);
+    const percentage = (score / questions.length) * 100;
+    const eligible = percentage >= 70 && tabSwitches <= 2 && finalViolations.length === 0;
     
-    // Stop camera
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
+    setCertificateEligible(eligible);
+    
+    await fetch('/api/citizen/quiz/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        score,
+        totalQuestions: questions.length,
+        percentage,
+        timeSpentMinutes: timerExpired ? 5 : timeSpentMinutes,
+        tabSwitches,
+        violations: finalViolations,
+        certificateEligible: eligible,
+        timeExpired: timerExpired
+      })
+    });
+    
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach(track => track.stop());
     }
   };
 
   const retakeQuiz = async () => {
-    // Check remaining attempts before allowing retake
     try {
       const attemptsRes = await fetch('/api/citizen/quiz/attempts');
       const attemptsData = await attemptsRes.json();
@@ -294,38 +304,82 @@ export default function ProctoredQuiz({ language: propLanguage }) {
         alert(`You have reached the maximum of ${maxAttempts} quiz attempts.`);
         return;
       }
-      
       setAttemptCount(attemptsData.attemptCount);
     } catch (error) {
       console.error('Failed to check attempts:', error);
     }
     
-    setIsSetupComplete(false);
-    setQuizStarted(false);
+    setStep('LANGUAGE');
     setCurrentQuestion(0);
     setAnswers([]);
-    setShowResults(false);
     setTabSwitches(0);
     setViolations([]);
     setCertificateEligible(false);
     setTimeLeft(300);
     setTimerExpired(false);
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
   };
 
   if (!session) {
     return <div className={styles.accessDenied}>{t.accessDenied}</div>;
   }
 
-  if (!isSetupComplete) {
+  // ==========================================
+  // RENDER PHASE 1: LANGUAGE SELECTION
+  // ==========================================
+  if (step === 'LANGUAGE') {
+    return (
+      <div className={styles.setupContainer}>
+        <div className={styles.setupCard} style={{ maxWidth: '500px', width: '100%', border: '1px solid #dcfce3' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ background: '#dcfce3', padding: '1rem', borderRadius: '50%' }}>
+              <Globe size={48} color="#16a34a" />
+            </div>
+          </div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#111827', marginBottom: '0.5rem' }}>
+            Select Quiz Language
+          </h1>
+          <h2 style={{ fontSize: '1.25rem', color: '#4b5563', marginBottom: '2.5rem', fontWeight: '500' }}>
+            Hitamo Ururimi rw'Ikizamini
+          </h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <button 
+              onClick={() => { setQuizLanguage('rw'); setStep('SETUP'); }}
+              className={styles.optionButton}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '700', padding: '1.25rem' }}
+            >
+              <span>🇷🇼 Kinyarwanda</span>
+              <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 'normal' }}>Komeza</span>
+            </button>
+
+            <button 
+              onClick={() => { setQuizLanguage('en'); setStep('SETUP'); }}
+              className={styles.optionButton}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '700', padding: '1.25rem' }}
+            >
+              <span>🇬🇧 English</span>
+              <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 'normal' }}>Continue</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER PHASE 2: SETUP & REQUIREMENTS
+  // ==========================================
+  if (step === 'SETUP') {
     const remainingAttempts = maxAttempts - attemptCount;
-    
     return (
       <div className={styles.setupContainer}>
         <div className={styles.setupCard}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <button onClick={() => setStep('LANGUAGE')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.9rem', textDecoration: 'underline' }}>
+              ← Change Language
+            </button>
+          </div>
+          
           <h1>{t.title}</h1>
           
           {attemptCount > 0 && (
@@ -337,26 +391,11 @@ export default function ProctoredQuiz({ language: propLanguage }) {
           
           <div className={styles.requirements}>
             <h3>{t.requirements}</h3>
-            <div className={styles.requirement}>
-              <Camera size={20} />
-              <span>{t.webcamAccess}</span>
-            </div>
-            <div className={styles.requirement}>
-              <Mic size={20} />
-              <span>{t.microphoneAccess}</span>
-            </div>
-            <div className={styles.requirement}>
-              <Eye size={20} />
-              <span>{t.stayOnTab}</span>
-            </div>
-            <div className={styles.requirement}>
-              <Award size={20} />
-              <span>{t.scoreRequirement}</span>
-            </div>
-            <div className={styles.requirement}>
-              <AlertTriangle size={20} />
-              <span>{t.maxAttempts} {maxAttempts} {t.attemptsAllowed}</span>
-            </div>
+            <div className={styles.requirement}><Camera size={20} /><span>{t.webcamAccess}</span></div>
+            <div className={styles.requirement}><Mic size={20} /><span>{t.microphoneAccess}</span></div>
+            <div className={styles.requirement}><Eye size={20} /><span>{t.stayOnTab}</span></div>
+            <div className={styles.requirement}><Award size={20} /><span>{t.scoreRequirement}</span></div>
+            <div className={styles.requirement}><AlertTriangle size={20} /><span>{t.maxAttempts} {maxAttempts} {t.attemptsAllowed}</span></div>
           </div>
           <button onClick={startQuiz} className={styles.startButton}>
             {t.startQuiz}
@@ -366,7 +405,10 @@ export default function ProctoredQuiz({ language: propLanguage }) {
     );
   }
 
-  if (showResults) {
+  // ==========================================
+  // RENDER PHASE 3: RESULTS
+  // ==========================================
+  if (step === 'RESULTS') {
     const score = answers.reduce((acc, answer, index) => {
       return acc + (answer === questions[index]?.correctAnswer ? 1 : 0);
     }, 0);
@@ -423,6 +465,9 @@ export default function ProctoredQuiz({ language: propLanguage }) {
     );
   }
 
+  // ==========================================
+  // RENDER PHASE 4: ACTIVE QUIZ
+  // ==========================================
   const currentQ = questions[currentQuestion];
 
   return (
