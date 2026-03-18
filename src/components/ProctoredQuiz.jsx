@@ -6,9 +6,14 @@ import { Camera, Mic, Eye, AlertTriangle, Award } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import styles from './ProctoredQuiz.module.css';
 
-export default function ProctoredQuiz() {
+// Accept the language prop from the QuizPage selection screen!
+export default function ProctoredQuiz({ language: propLanguage }) {
   const { data: session } = useSession();
-  const { language } = useLanguage();
+  
+  // Use the language selected on the quiz screen, or fallback to the site's global language
+  const { language: contextLanguage } = useLanguage();
+  const activeLanguage = propLanguage || contextLanguage || 'en';
+  
   const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
   const [tabSwitches, setTabSwitches] = useState(0);
@@ -88,7 +93,7 @@ export default function ProctoredQuiz() {
     }
   };
 
-  const t = translations[language];
+  const t = translations[activeLanguage] || translations.en;
 
   // Fetch attempt count on component mount
   useEffect(() => {
@@ -188,7 +193,8 @@ export default function ProctoredQuiz() {
     if (!cameraReady) return;
 
     try {
-      const res = await fetch('/api/citizen/quiz');
+      // NOW IT FETCHES THE QUESTIONS FOR THE SELECTED LANGUAGE!
+      const res = await fetch(`/api/citizen/quiz?lang=${activeLanguage}`);
       const data = await res.json();
       setQuestions(data.questions);
       setQuizStarted(true);
@@ -435,7 +441,7 @@ export default function ProctoredQuiz() {
       <div className={styles.questionPanel}>
         <h2>{currentQ?.question}</h2>
         <div className={styles.options}>
-          {currentQ?.options.map((option, index) => (
+          {currentQ?.options?.map((option, index) => (
             <button
               key={index}
               onClick={() => submitAnswer(option)}
