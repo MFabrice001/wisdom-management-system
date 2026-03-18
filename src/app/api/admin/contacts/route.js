@@ -32,7 +32,7 @@ export async function GET(request) {
       ];
     }
 
-    const [contacts, total, elderConversations] = await Promise.all([
+    const [contacts, total] = await Promise.all([
       prisma.contactMessage.findMany({
         where,
         skip,
@@ -41,60 +41,23 @@ export async function GET(request) {
         include: {
           _count: {
             select: { replies: true }
+          },
+          // THIS IS CRUCIAL: It fetches the actual email conversation history
+          replies: {
+            orderBy: { createdAt: 'asc' }
           }
         }
       }),
-      prisma.contactMessage.count({ where }),
-      // Also fetch conversations with elder applicants
-      prisma.conversation.findMany({
-        where: {
-          participants: {
-            some: {
-              role: 'ELDER'
-            }
-          }
-        },
-        include: {
-          participants: { select: { id: true, name: true, email: true, role: true } },
-          messages: {
-            orderBy: { createdAt: 'desc' },
-            take: 1
-          }
-        },
-        orderBy: { updatedAt: 'desc' }
-      })
+      prisma.contactMessage.count({ where })
     ]);
 
-    // Format conversations as contact-like entries
-    const conversationContacts = elderConversations.map(conv => {
-      const elder = conv.participants.find(p => p.role === 'ELDER');
-      const lastMsg = conv.messages[0];
-      return {
-        id: `conv_${conv.id}`,
-        isConversation: true,
-        conversationId: conv.id,
-        name: elder?.name || 'Elder Applicant',
-        email: elder?.email || '',
-        subject: 'Elder Application Conversation',
-        message: lastMsg?.content || 'No messages yet',
-        status: lastMsg?.senderId === elder?.id ? 'NEW' : 'REPLIED',
-        createdAt: conv.updatedAt,
-        _count: { replies: conv.messages.length }
-      };
-    });
-
-    // Combine contacts and conversations
-    const allContacts = [...contacts, ...conversationContacts];
-    // Sort by date
-    allContacts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
     return NextResponse.json({
-      contacts: allContacts,
+      contacts,
       pagination: {
         page,
         limit,
-        total: total + elderConversations.length,
-        pages: Math.ceil((total + elderConversations.length) / limit)
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
 
@@ -113,49 +76,6 @@ export async function POST(request) {
     }
 
     const { contactId, action, replyMessage } = await request.json();
-
-    // Handle conversation replies
-    if (contactId && contactId.startsWith('conv_')) {
-      const conversationId = contactId.replace('conv_', '');
-      
-      if (action === 'reply' && replyMessage) {
-        // Get conversation details
-        const conversation = await prisma.conversation.findUnique({
-          where: { id: conversationId },
-          include: {
-            participants: true
-          }
-        });
-
-        if (!conversation) {
-          return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
-        }
-
-        // Add message to conversation
-        await prisma.message.create({
-          data: {
-            content: replyMessage,
-            senderId: session.user.id,
-            conversationId: conversation.id
-          }
-        });
-
-        // Update conversation timestamp
-        await prisma.conversation.update({
-          where: { id: conversation.id },
-          data: { updatedAt: new Date() }
-        });
-
-        return NextResponse.json({ success: true });
-      }
-
-      if (action === 'delete') {
-        // Don't actually delete conversation, just return success
-        return NextResponse.json({ success: true });
-      }
-
-      return NextResponse.json({ error: 'Invalid action for conversation' }, { status: 400 });
-    }
 
     if (action === 'reply' && replyMessage) {
       // Get contact details for email
@@ -216,7 +136,8 @@ export async function POST(request) {
 
 async function sendReplyEmail(contact, replyMessage) {
   try {
-    const transporter = nodemailer.createTransporter({
+    // FIX: Changed from createTransporter back to createTransport
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.SMTP_EMAIL,
@@ -240,7 +161,7 @@ async function sendReplyEmail(contact, replyMessage) {
           <p style="color: #64748b; font-style: italic;">${contact.message}</p>
         </div>
         
-        <p>If you have any further questions, please don't hesitate to contact us again.</p>
+        <p>If you have any further questions, please don't hesitate to contact us again via the website.</p>
         <p>Best regards,<br><strong>Umurage Wubwenge Team</strong></p>
       </div>
     `;

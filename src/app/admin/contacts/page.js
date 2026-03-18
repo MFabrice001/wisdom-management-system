@@ -16,8 +16,6 @@ export default function ContactsAdmin() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState(null);
-  const [conversationMessages, setConversationMessages] = useState([]);
-  const [loadingConversation, setLoadingConversation] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [filters, setFilters] = useState({
@@ -50,35 +48,17 @@ export default function ContactsAdmin() {
         const data = await response.json();
         setContacts(data.contacts);
         setPagination(data.pagination);
+        
+        // If a contact is currently selected (e.g. after a reply), refresh its data in the modal
+        if (selectedContact) {
+          const updatedContact = data.contacts.find(c => c.id === selectedContact.id);
+          if (updatedContact) setSelectedContact(updatedContact);
+        }
       }
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchConversationDetails = async (conversationId) => {
-    try {
-      setLoadingConversation(true);
-      const response = await fetch(`/api/admin/contacts/conversation?id=${conversationId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setConversationMessages(data.conversation.messages || []);
-      }
-    } catch (error) {
-      console.error('Error fetching conversation:', error);
-    } finally {
-      setLoadingConversation(false);
-    }
-  };
-
-  const handleViewContact = async (contact) => {
-    setSelectedContact(contact);
-    if (contact.isConversation && contact.conversationId) {
-      await fetchConversationDetails(contact.conversationId);
-    } else {
-      setConversationMessages([]);
     }
   };
 
@@ -91,15 +71,12 @@ export default function ContactsAdmin() {
       });
       
       if (response.ok) {
-        fetchContacts();
         if (action === 'reply') {
           setReplyMessage('');
-          // If replying to a conversation, refresh conversation messages
-          if (selectedContact?.isConversation && selectedContact?.conversationId) {
-            await fetchConversationDetails(selectedContact.conversationId);
-          } else {
-            setSelectedContact(null);
-          }
+          // Refresh data so the new reply shows up in the modal
+          await fetchContacts(); 
+        } else {
+          fetchContacts();
         }
       }
     } catch (error) {
@@ -151,7 +128,7 @@ export default function ContactsAdmin() {
               Back
             </button>
             <h1 className={styles.title}>Contact Management</h1>
-            <p className={styles.subtitle}>Manage contact form submissions and elder applicant conversations</p>
+            <p className={styles.subtitle}>Manage contact form submissions</p>
           </div>
         </div>
 
@@ -192,7 +169,7 @@ export default function ContactsAdmin() {
               <div key={contact.id} className={styles.contactCard}>
                 <div className={styles.contactHeader}>
                   <div className={styles.contactInfo}>
-                    <h3>{contact.name} {contact.isConversation && <span style={{ fontSize: '10px', background: '#0ea5e9', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '8px' }}>ELDER CHAT</span>}</h3>
+                    <h3>{contact.name}</h3>
                     <p>{contact.email}</p>
                   </div>
                   <div className={styles.contactMeta}>
@@ -216,11 +193,11 @@ export default function ContactsAdmin() {
                 
                 <div className={styles.contactActions}>
                   <button
-                    onClick={() => handleViewContact(contact)}
+                    onClick={() => setSelectedContact(contact)}
                     className={styles.viewButton}
                   >
                     <Eye size={16} />
-                    {contact.isConversation ? 'View Conversation' : 'View Details'}
+                    View Details
                   </button>
                   
                   {contact.status === 'NEW' && (
@@ -242,7 +219,7 @@ export default function ContactsAdmin() {
                   </button>
                 </div>
                 
-                {contact._count.replies > 0 && (
+                {contact._count?.replies > 0 && (
                   <div className={styles.replyCount}>
                     <MessageSquare size={14} />
                     {contact._count.replies} replies
@@ -275,96 +252,78 @@ export default function ContactsAdmin() {
         {/* Contact Detail Modal */}
         {selectedContact && (
           <div className={styles.modal}>
-            <div className={styles.modalContent}>
+            <div className={styles.modalContent} style={{ maxWidth: '800px' }}>
               <div className={styles.modalHeader}>
-                <h2>{selectedContact.isConversation ? 'Conversation with Elder Applicant' : 'Contact Details'}</h2>
-                <button onClick={() => { setSelectedContact(null); setConversationMessages([]); }}>×</button>
+                <h2>Contact Details</h2>
+                <button onClick={() => setSelectedContact(null)}>×</button>
               </div>
               
               <div className={styles.modalBody}>
-                <div className={styles.contactDetails}>
+                <div className={styles.contactDetails} style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
                   <div className={styles.detailRow}>
                     <strong>Name:</strong> {selectedContact.name}
                   </div>
                   <div className={styles.detailRow}>
                     <strong>Email:</strong> {selectedContact.email}
                   </div>
-                  {!selectedContact.isConversation && (
-                    <>
-                      <div className={styles.detailRow}>
-                        <strong>Subject:</strong> {selectedContact.subject}
-                      </div>
-                      <div className={styles.detailRow}>
-                        <strong>Date:</strong> {new Date(selectedContact.createdAt).toLocaleString()}
-                      </div>
-                    </>
-                  )}
+                  <div className={styles.detailRow}>
+                    <strong>Subject:</strong> {selectedContact.subject}
+                  </div>
+                  <div className={styles.detailRow}>
+                    <strong>Date:</strong> {new Date(selectedContact.createdAt).toLocaleString()}
+                  </div>
                   <div className={styles.detailRow}>
                     <strong>Status:</strong> 
                     <span 
                       className={styles.status}
-                      style={{ backgroundColor: getStatusColor(selectedContact.status) }}
+                      style={{ backgroundColor: getStatusColor(selectedContact.status), marginLeft: '0.5rem' }}
                     >
                       {getStatusText(selectedContact.status)}
                     </span>
                   </div>
                 </div>
                 
-                {selectedContact.isConversation ? (
-                  /* Show conversation messages */
-                  <div className={styles.messageSection}>
-                    <h3>Conversation Messages</h3>
-                    {loadingConversation ? (
-                      <div className={styles.loading}>
-                        <Loader2 className={styles.spinner} size={24} />
-                      </div>
-                    ) : conversationMessages.length > 0 ? (
-                      <div className={styles.messageContent} style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                        {conversationMessages.map((msg) => (
-                          <div 
-                            key={msg.id} 
-                            style={{ 
-                              marginBottom: '12px',
-                              padding: '10px',
-                              borderRadius: '8px',
-                              backgroundColor: msg.senderId === session?.user?.id ? '#e0f2fe' : '#f3f4f6',
-                              marginLeft: msg.senderId === session?.user?.id ? '40px' : '0',
-                              marginRight: msg.senderId === session?.user?.id ? '0' : '40px'
-                            }}
-                          >
-                            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                              <strong>{msg.sender?.name || 'Unknown'}</strong> - {new Date(msg.createdAt).toLocaleString()}
-                            </div>
-                            <div>{msg.content}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p style={{ color: '#6b7280', fontStyle: 'italic' }}>No messages in this conversation yet.</p>
-                    )}
-                  </div>
-                ) : (
-                  /* Show regular contact message */
-                  <div className={styles.messageSection}>
-                    <h3>Message</h3>
-                    <div className={styles.messageContent}>
+                <div className={styles.messageSection}>
+                  <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                    <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase' }}>Original Message:</strong>
+                    <div style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap', color: '#1e293b' }}>
                       {selectedContact.message}
                     </div>
                   </div>
-                )}
+
+                  {/* Display Conversation History (Replies) */}
+                  {selectedContact.replies && selectedContact.replies.length > 0 && (
+                    <div style={{ marginTop: '1.5rem' }}>
+                      <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase' }}>Your Sent Replies:</strong>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                        {selectedContact.replies.map((reply, idx) => (
+                          <div key={reply.id || idx} style={{ padding: '1rem', backgroundColor: '#eff6ff', borderRadius: '0.5rem', borderLeft: '4px solid #3b82f6' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem', color: '#64748b' }}>
+                              <span style={{ fontWeight: 'bold', color: '#1d4ed8' }}>Admin Reply</span>
+                              <span>{new Date(reply.createdAt).toLocaleString()}</span>
+                            </div>
+                            <p style={{ whiteSpace: 'pre-wrap', margin: 0, color: '#1e293b' }}>{reply.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 
-                <div className={styles.replySection}>
-                  <h3>Send Reply</h3>
+                <div className={styles.replySection} style={{ marginTop: '2rem' }}>
+                  <h3>Send a New Reply</h3>
                   <textarea
                     value={replyMessage}
                     onChange={(e) => setReplyMessage(e.target.value)}
                     placeholder="Type your reply here..."
                     rows={4}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', marginBottom: '1rem' }}
                   />
                   <button
                     onClick={handleReply}
                     disabled={!replyMessage.trim() || sending}
                     className={styles.sendButton}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
                   >
                     {sending ? (
                       <Loader2 size={16} className={styles.spinning} />
