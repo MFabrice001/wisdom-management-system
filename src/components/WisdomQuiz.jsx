@@ -15,15 +15,27 @@ export default function WisdomQuiz({ wisdom, onQuizComplete }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (wisdom?.quizzes && wisdom.quizzes.length > 0) {
+    // Safely handle wisdom and quizzes being undefined
+    const wisdomQuizzes = wisdom?.quizzes;
+    if (wisdomQuizzes && Array.isArray(wisdomQuizzes) && wisdomQuizzes.length > 0) {
       // Shuffle the quizzes for variety
-      const shuffled = [...wisdom.quizzes].sort(() => Math.random() - 0.5);
+      const shuffled = [...wisdomQuizzes].sort(() => Math.random() - 0.5);
       setQuizzes(shuffled);
-      setLoading(false);
-    } else {
-      setLoading(false);
     }
+    setLoading(false);
   }, [wisdom]);
+
+  // Don't render if no quizzes or still loading
+  if (loading || quizzes.length === 0) {
+    return null;
+  }
+
+  const currentQuiz = quizzes[currentQuestion];
+  
+  // Safety check for current quiz
+  if (!currentQuiz) {
+    return null;
+  }
 
   const handleAnswer = async (option) => {
     if (showResult) return;
@@ -31,10 +43,10 @@ export default function WisdomQuiz({ wisdom, onQuizComplete }) {
     setSelectedAnswer(option);
     setShowResult(true);
 
-    const isCorrect = option === quizzes[currentQuestion].correctAnswer;
+    const isCorrect = option === currentQuiz.correctAnswer;
     
     setAnswers(prev => [...prev, {
-      quizId: quizzes[currentQuestion].id,
+      quizId: currentQuiz.id,
       selectedAnswer: option,
       isCorrect
     }]);
@@ -46,7 +58,7 @@ export default function WisdomQuiz({ wisdom, onQuizComplete }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            quizId: quizzes[currentQuestion].id,
+            quizId: currentQuiz.id,
             selectedAnswer: option,
             isCorrect
           })
@@ -65,27 +77,22 @@ export default function WisdomQuiz({ wisdom, onQuizComplete }) {
     } else {
       // Quiz completed
       const correctCount = answers.filter(a => a.isCorrect).length + 
-        (selectedAnswer === quizzes[currentQuestion].correctAnswer ? 1 : 0);
+        (selectedAnswer === currentQuiz.correctAnswer ? 1 : 0);
       
       if (onQuizComplete) {
         onQuizComplete({
           totalQuestions: quizzes.length,
           correctAnswers: correctCount,
           answers: [...answers, {
-            quizId: quizzes[currentQuestion].id,
+            quizId: currentQuiz.id,
             selectedAnswer,
-            isCorrect: selectedAnswer === quizzes[currentQuestion].correctAnswer
+            isCorrect: selectedAnswer === currentQuiz.correctAnswer
           }]
         });
       }
     }
   };
 
-  if (loading || quizzes.length === 0) {
-    return null;
-  }
-
-  const currentQuiz = quizzes[currentQuestion];
   const isCorrect = selectedAnswer === currentQuiz?.correctAnswer;
   const progress = ((currentQuestion + 1) / quizzes.length) * 100;
 

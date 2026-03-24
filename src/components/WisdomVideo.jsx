@@ -5,25 +5,33 @@ import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from '
 import styles from './WisdomVideo.module.css';
 
 export default function WisdomVideo({ videoUrl, videoThumbnail, title }) {
+  // Don't render if no video URL
+  if (!videoUrl) {
+    return null;
+  }
+
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
-      setProgress((video.currentTime / video.duration) * 100);
+      if (video.duration) {
+        setCurrentTime(video.currentTime);
+        setProgress((video.currentTime / video.duration) * 100);
+      }
     };
 
     const handleLoadedMetadata = () => {
-      setDuration(video.duration);
+      if (video.duration) {
+        setDuration(video.duration);
+      }
     };
 
     const handleEnded = () => {

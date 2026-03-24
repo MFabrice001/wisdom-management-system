@@ -257,7 +257,7 @@ export default function WisdomDetailPage({ params }) {
             )}
 
             {/* Video/Reels Player */}
-            {wisdom.videoUrl && (
+            {wisdom?.videoUrl && (
               <WisdomVideo 
                 videoUrl={wisdom.videoUrl} 
                 videoThumbnail={wisdom.videoThumbnail}
@@ -266,7 +266,7 @@ export default function WisdomDetailPage({ params }) {
             )}
 
             {/* Quiz for Youth */}
-            {wisdom.quizzes && wisdom.quizzes.length > 0 && (
+            {wisdom?.quizzes && wisdom.quizzes.length > 0 && (
               <WisdomQuiz wisdom={wisdom} />
             )}
 

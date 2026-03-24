@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Square, Play, Pause, Trash2, AlertCircle } from 'lucide-react';
 import styles from './AudioRecorder.module.css';
 
@@ -16,19 +16,35 @@ export default function AudioRecorder({ onAudioReady, initialAudioUrl }) {
   const audioRef = useRef(null);
   const timerRef = useRef(null);
   const chunksRef = useRef([]);
+  const streamRef = useRef(null);
+
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    // Stop all tracks in the stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
+    // Initial audio URL
+    if (initialAudioUrl) {
+      setAudioUrl(initialAudioUrl);
+    }
+    
+    return cleanup;
+  }, [initialAudioUrl, cleanup]);
 
   const startRecording = async () => {
     try {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -53,7 +69,7 @@ export default function AudioRecorder({ onAudioReady, initialAudioUrl }) {
         }
 
         // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
+        cleanup();
       };
 
       mediaRecorder.start();
@@ -73,7 +89,10 @@ export default function AudioRecorder({ onAudioReady, initialAudioUrl }) {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
   };
 
