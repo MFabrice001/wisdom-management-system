@@ -5,11 +5,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from '
 import styles from './WisdomVideo.module.css';
 
 export default function WisdomVideo({ videoUrl, videoThumbnail, title }) {
-  // Don't render if no video URL
-  if (!videoUrl) {
-    return null;
-  }
-
+  // ALWAYS declare ALL hooks at the top level before any conditional returns
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -102,6 +98,7 @@ export default function WisdomVideo({ videoUrl, videoThumbnail, title }) {
     }
   };
 
+  // The conditional return MUST go here, after all hooks!
   if (!videoUrl) {
     return null;
   }
