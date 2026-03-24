@@ -247,27 +247,13 @@ export default function WisdomDetailPage({ params }) {
           {/* Content */}
           <div className={styles.content}>
             {/* Audio Player */}
-            {wisdom.audioUrl && (
+            {wisdom?.audioUrl && (
               <div className={styles.audioPlayer}>
                 <audio controls>
                   <source src={wisdom.audioUrl} type="audio/mpeg" />
                   Your browser does not support the audio element.
                 </audio>
               </div>
-            )}
-
-            {/* Video/Reels Player */}
-            {wisdom?.videoUrl && (
-              <WisdomVideo 
-                videoUrl={wisdom.videoUrl} 
-                videoThumbnail={wisdom.videoThumbnail}
-                title={wisdom.title}
-              />
-            )}
-
-            {/* Quiz for Youth */}
-            {wisdom?.quizzes && wisdom.quizzes.length > 0 && (
-              <WisdomQuiz wisdom={wisdom} />
             )}
 
             {/* Book-like Content with Images */}
