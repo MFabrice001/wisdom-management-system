@@ -8,8 +8,10 @@ import {
   Heart, MessageCircle, Eye, Calendar, User, Tag, 
   ArrowLeft, Loader2, Send, Bookmark, Share2, FileText, Download, Trash2 
 } from 'lucide-react';
-import ShareModal from '@/components/ShareModal'; // Import the ShareModal component
-import styles from './WisdomDetail.module.css'; // Assuming you have this CSS module
+import ShareModal from '@/components/ShareModal';
+import WisdomQuiz from '@/components/WisdomQuiz';
+import WisdomVideo from '@/components/WisdomVideo';
+import styles from './WisdomDetail.module.css';
 
 export default function WisdomDetailPage({ params }) {
   const { data: session } = useSession();
@@ -252,6 +254,20 @@ export default function WisdomDetailPage({ params }) {
                   Your browser does not support the audio element.
                 </audio>
               </div>
+            )}
+
+            {/* Video/Reels Player */}
+            {wisdom.videoUrl && (
+              <WisdomVideo 
+                videoUrl={wisdom.videoUrl} 
+                videoThumbnail={wisdom.videoThumbnail}
+                title={wisdom.title}
+              />
+            )}
+
+            {/* Quiz for Youth */}
+            {wisdom.quizzes && wisdom.quizzes.length > 0 && (
+              <WisdomQuiz wisdom={wisdom} />
             )}
 
             {/* Book-like Content with Images */}

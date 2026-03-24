@@ -71,6 +71,13 @@ export async function POST(request) {
     const images = formData.get('images') ? JSON.parse(formData.get('images')) : [];
     const audioUrl = formData.get('audioUrl');
     const documentFile = formData.get('document');
+    
+    // New: Video/Reels support
+    const videoFile = formData.get('video');
+    const videoThumbnail = formData.get('videoThumbnail');
+    
+    // New: Quiz questions for youth engagement
+    const quizzes = formData.get('quizzes') ? JSON.parse(formData.get('quizzes')) : [];
 
     // Validation
     if (!title || !content || !category) {
@@ -81,8 +88,9 @@ export async function POST(request) {
     }
 
     let documentUrl = null;
+    let videoUrl = null;
     
-    // Handle file upload if present
+    // Handle document upload if present
     if (documentFile && documentFile.size > 0) {
       // 5MB limit check for the document
       if (documentFile.size > 5 * 1024 * 1024) {
@@ -97,6 +105,21 @@ export async function POST(request) {
       // Store the secure cloud URL in the database
       documentUrl = blob.url;
     }
+    
+    // Handle video upload if present (for Reels feature)
+    if (videoFile && videoFile.size > 0) {
+      // 50MB limit for videos
+      if (videoFile.size > 50 * 1024 * 1024) {
+        return NextResponse.json({ error: 'Video size too large (Max 50MB)' }, { status: 400 });
+      }
+
+      // Upload video to Vercel Blob
+      const videoBlob = await put(videoFile.name, videoFile, {
+        access: 'public',
+      });
+      
+      videoUrl = videoBlob.url;
+    }
 
     // Create wisdom
     const wisdom = await prisma.wisdom.create({
@@ -109,8 +132,20 @@ export async function POST(request) {
         images: images || [],
         audioUrl: audioUrl || null,
         documentUrl: documentUrl,
+        videoUrl: videoUrl,
+        videoThumbnail: videoThumbnail || null,
         authorId: session.user.id,
-        isPublished: true
+        isPublished: true,
+        // Create quizzes if provided
+        quizzes: quizzes.length > 0 ? {
+          create: quizzes.map((quiz, index) => ({
+            question: quiz.question,
+            options: quiz.options,
+            correctAnswer: quiz.correctAnswer,
+            explanation: quiz.explanation || null,
+            order: index
+          }))
+        } : undefined
       },
       include: {
         author: {
@@ -119,7 +154,8 @@ export async function POST(request) {
             name: true,
             email: true
           }
-        }
+        },
+        quizzes: true
       }
     });
 

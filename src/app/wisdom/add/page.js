@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, AlertCircle, CheckCircle, Loader2, X, Upload, FileText } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, X, Upload, FileText, Video, Brain, Mic } from 'lucide-react';
+import AudioRecorder from '@/components/AudioRecorder';
 import styles from './page.module.css';
 
 export default function AddWisdomPage() {
@@ -24,6 +25,11 @@ export default function AddWisdomPage() {
     audioUrl: '',
     images: [],
     documentFile: null,
+    // New: Video/Reels for youth
+    videoFile: null,
+    videoThumbnail: '',
+    // New: Quiz questions for youth engagement
+    quizzes: [],
   });
   const [uploadingImages, setUploadingImages] = useState(false);
   const [userApprovedCategory, setUserApprovedCategory] = useState(null);
@@ -178,6 +184,92 @@ export default function AddWisdomPage() {
     setFormData({ ...formData, documentFile: null });
   };
 
+  // Handle video upload for Reels feature
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+      
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please select a video file (.mp4, .webm, .mov)');
+        return;
+      }
+      
+      if (file.size > 50 * 1024 * 1024) {
+        setError('Video size must be less than 50MB');
+        return;
+      }
+      
+      setFormData({ ...formData, videoFile: file, videoThumbnail: '' });
+      setError('');
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setFormData({ ...formData, videoFile: null, videoThumbnail: '' });
+  };
+
+  const handleVideoThumbnailChange = (e) => {
+    setFormData({ ...formData, videoThumbnail: e.target.value });
+  };
+
+  // Quiz management for youth engagement
+  const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const [newQuiz, setNewQuiz] = useState({
+    question: '',
+    options: ['', '', '', ''],
+    correctAnswer: '',
+    explanation: ''
+  });
+
+  const handleAddQuiz = () => {
+    if (!newQuiz.question.trim()) {
+      setError('Question is required');
+      return;
+    }
+    if (newQuiz.options.filter(o => o.trim()).length < 2) {
+      setError('At least 2 options are required');
+      return;
+    }
+    if (!newQuiz.correctAnswer) {
+      setError('Please select the correct answer');
+      return;
+    }
+
+    const quiz = {
+      question: newQuiz.question,
+      options: newQuiz.options.filter(o => o.trim()),
+      correctAnswer: newQuiz.correctAnswer,
+      explanation: newQuiz.explanation
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      quizzes: [...prev.quizzes, quiz]
+    }));
+
+    setNewQuiz({
+      question: '',
+      options: ['', '', '', ''],
+      correctAnswer: '',
+      explanation: ''
+    });
+    setShowQuizBuilder(false);
+  };
+
+  const handleRemoveQuiz = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      quizzes: prev.quizzes.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleOptionChange = (index, value) => {
+    const newOptions = [...newQuiz.options];
+    newOptions[index] = value;
+    setNewQuiz({ ...newQuiz, options: newOptions });
+  };
+
   const handleAddTag = (e) => {
     e.preventDefault();
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
@@ -223,11 +315,13 @@ export default function AddWisdomPage() {
       const submitData = new FormData();
       
       Object.keys(formData).forEach(key => {
-        if (key === 'tags' || key === 'images') {
+        if (key === 'tags' || key === 'images' || key === 'quizzes') {
           submitData.append(key, JSON.stringify(formData[key]));
         } else if (key === 'documentFile' && formData[key]) {
           submitData.append('document', formData[key]);
-        } else if (key !== 'documentFile') {
+        } else if (key === 'videoFile' && formData[key]) {
+          submitData.append('video', formData[key]);
+        } else if (key !== 'documentFile' && key !== 'videoFile') {
           submitData.append(key, formData[key]);
         }
       });
@@ -422,8 +516,14 @@ export default function AddWisdomPage() {
 
             <div className={styles.formGroup}>
               <label htmlFor="audioUrl" className={styles.label}>
-                Audio URL (Optional)
+                <Mic size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                Voice Recording (Optional)
               </label>
+              <p className={styles.helpText}>For blind elders - record your wisdom using your voice</p>
+              <AudioRecorder 
+                onAudioReady={(url) => setFormData({ ...formData, audioUrl: url })}
+                initialAudioUrl={formData.audioUrl}
+              />
               <input
                 id="audioUrl"
                 name="audioUrl"
@@ -431,10 +531,10 @@ export default function AddWisdomPage() {
                 value={formData.audioUrl}
                 onChange={handleChange}
                 className={styles.input}
-                placeholder="https://example.com/audio.mp3"
+                placeholder="Or enter audio URL manually"
                 disabled={loading || success}
+                style={{ marginTop: '0.5rem' }}
               />
-              <p className={styles.helpText}>Link to an audio recording of the wisdom</p>
             </div>
 
             <div className={styles.formGroup}>
@@ -511,6 +611,180 @@ export default function AddWisdomPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Video/Reels Upload Section */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <Video size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                Video/Reels (Optional)
+              </label>
+              <p className={styles.helpText}>Upload a short video - youth users can watch it as Reels</p>
+              <div className={styles.fileUpload}>
+                {!formData.videoFile ? (
+                  <>
+                    <input
+                      type="file"
+                      id="videoFile"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      onChange={handleVideoChange}
+                      className={styles.fileInput}
+                      disabled={loading || success}
+                    />
+                    <label htmlFor="videoFile" className={styles.fileLabel}>
+                      <Video size={20} />
+                      <span>Upload Video (Max 50MB)</span>
+                      <small>MP4, WebM, MOV</small>
+                    </label>
+                  </>
+                ) : (
+                  <div className={styles.fileSelected}>
+                    <Video size={20} />
+                    <div className={styles.fileInfo}>
+                      <span className={styles.fileName}>{formData.videoFile.name}</span>
+                      <small className={styles.fileSize}>
+                        {(formData.videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveVideo}
+                      className={styles.fileRemove}
+                      disabled={loading || success}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              {formData.videoFile && (
+                <div style={{ marginTop: '1rem' }}>
+                  <label className={styles.label}>Video Thumbnail URL (Optional)</label>
+                  <input
+                    type="url"
+                    value={formData.videoThumbnail}
+                    onChange={handleVideoThumbnailChange}
+                    className={styles.input}
+                    placeholder="https://example.com/thumbnail.jpg"
+                    disabled={loading || success}
+                  />
+                  <p className={styles.helpText}>Custom thumbnail for your video (optional)</p>
+                </div>
+              )}
+            </div>
+
+            {/* Quiz Builder Section for Youth Engagement */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                <Brain size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                Quiz Questions for Youth (Optional)
+              </label>
+              <p className={styles.helpText}>Add quiz questions to make wisdom engaging for young users</p>
+              
+              {formData.quizzes.length > 0 && (
+                <div className={styles.quizList}>
+                  {formData.quizzes.map((quiz, index) => (
+                    <div key={index} className={styles.quizItem}>
+                      <div className={styles.quizQuestion}>
+                        <strong>Q{index + 1}:</strong> {quiz.question}
+                      </div>
+                      <div className={styles.quizOptions}>
+                        {quiz.options.map((opt, i) => (
+                          <span key={i} className={quiz.correctAnswer === opt ? styles.correctOption : ''}>
+                            {opt}{quiz.correctAnswer === opt && ' ✓'}
+                          </span>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveQuiz(index)}
+                        className={styles.removeQuizBtn}
+                        disabled={loading || success}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!showQuizBuilder ? (
+                <button
+                  type="button"
+                  onClick={() => setShowQuizBuilder(true)}
+                  className={styles.addQuizButton}
+                  disabled={loading || success}
+                >
+                  <Plus size={20} />
+                  Add Quiz Question
+                </button>
+              ) : (
+                <div className={styles.quizBuilder}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Question</label>
+                    <input
+                      type="text"
+                      value={newQuiz.question}
+                      onChange={(e) => setNewQuiz({ ...newQuiz, question: e.target.value })}
+                      className={styles.input}
+                      placeholder="Enter your quiz question"
+                    />
+                  </div>
+                  
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Options (select correct answer)</label>
+                    {newQuiz.options.map((option, index) => (
+                      <div key={index} className={styles.optionRow}>
+                        <input
+                          type="radio"
+                          name="correctAnswer"
+                          checked={newQuiz.correctAnswer === option}
+                          onChange={() => setNewQuiz({ ...newQuiz, correctAnswer: option })}
+                          disabled={!option.trim()}
+                        />
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(e) => handleOptionChange(index, e.target.value)}
+                          className={styles.input}
+                          placeholder={`Option ${index + 1}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Explanation (shown after answering)</label>
+                    <textarea
+                      value={newQuiz.explanation}
+                      onChange={(e) => setNewQuiz({ ...newQuiz, explanation: e.target.value })}
+                      className={styles.textarea}
+                      placeholder="Explain the correct answer..."
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className={styles.quizBuilderButtons}>
+                    <button
+                      type="button"
+                      onClick={handleAddQuiz}
+                      className={styles.submitButton}
+                      disabled={loading || success}
+                    >
+                      <CheckCircle size={20} />
+                      Add Question
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuizBuilder(false)}
+                      className={styles.cancelButton}
+                      disabled={loading || success}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

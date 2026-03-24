@@ -47,6 +47,12 @@ export async function GET(request, { params }) {
             comments: true,
             bookmarks: true,
           }
+        },
+        // Include quizzes for youth engagement
+        quizzes: {
+          orderBy: {
+            order: 'asc'
+          }
         }
       }
     });

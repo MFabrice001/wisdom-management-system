@@ -1,0 +1,192 @@
+.videoContainer {
+  margin: 1.5rem 0;
+}
+
+.videoWrapper {
+  position: relative;
+  background: #000;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.playOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.playButton {
+  width: 80px;
+  height: 80px;
+  background: rgba(34, 197, 94, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.playButton:hover {
+  background: #22c55e;
+  transform: scale(1.1);
+}
+
+.controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.videoWrapper:hover .controls {
+  opacity: 1;
+}
+
+.progressContainer {
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.progressBar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 2px;
+  transition: width 0.1s;
+}
+
+.controlsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.leftControls,
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.controlButton {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.controlButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.time {
+  color: white;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+.videoTitle {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Reels-style display variant */
+.reelsContainer {
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
+  aspect-ratio: 9 / 16;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #000;
+}
+
+.reelsContainer .video {
+  object-fit: cover;
+}
+
+.reelsOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  color: white;
+}
+
+.reelsTitle {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.reelsActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.reelsAction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.reelsAction span {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 640px) {
+  .videoWrapper {
+    border-radius: 0;
+  }
+
+  .playButton {
+    width: 60px;
+    height: 60px;
+  }
+
+  .playButton svg {
+    width: 32px;
+    height: 32px;
+  }
+}

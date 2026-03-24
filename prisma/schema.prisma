@@ -92,11 +92,52 @@ model Wisdom {
   bookmarks   Bookmark[]
   comments    Comment[]
   likes       Like[]
+  
+  // New: Video/Reels for wisdom
+  videoUrl    String?
+  videoThumbnail String?
+  
+  // New: Quiz questions for youth engagement
+  quizzes     WisdomQuiz[]
 
   @@index([category])
   @@index([language])
   @@index([createdAt])
   @@map("wisdoms")
+}
+
+// Quiz model for youth engagement with wisdom
+model WisdomQuiz {
+  id              String   @id @default(cuid())
+  wisdomId        String
+  wisdom          Wisdom   @relation(fields: [wisdomId], references: [id], onDelete: Cascade)
+  question        String
+  options         Json     // Array of options
+  correctAnswer   String
+  explanation     String?  // Explanation shown after answering
+  order           Int      @default(0) // Order of questions
+  createdAt       DateTime @default(now())
+  
+  // Quiz attempts by users
+  attempts        WisdomQuizAttempt[]
+
+  @@index([wisdomId])
+  @@map("wisdom_quizzes")
+}
+
+// Track user quiz attempts
+model WisdomQuizAttempt {
+  id          String     @id @default(cuid())
+  userId      String
+  quizId      String
+  quiz        WisdomQuiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  selectedAnswer String
+  isCorrect   Boolean
+  createdAt   DateTime   @default(now())
+
+  @@index([quizId])
+  @@index([userId])
+  @@map("wisdom_quiz_attempts")
 }
 
 model Comment {
