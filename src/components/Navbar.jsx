@@ -131,20 +131,6 @@ export default function Navbar() {
                   <LayoutDashboard size={18} />
                   {t.citizenDashboard}
                 </Link>
-                <Link 
-                  href="/citizen/forum" 
-                  className={`${styles.navLink} ${pathname === '/citizen/forum' ? styles.active : ''}`}
-                >
-                  <MessagesSquare size={18} />
-                  {t.forum}
-                </Link>
-                <Link 
-                  href="/citizen/quiz" 
-                  className={`${styles.navLink} ${pathname === '/citizen/quiz' ? styles.active : ''}`}
-                >
-                  <BrainCircuit size={18} />
-                  {t.quiz}
-                </Link>
               </>
             )}
 
@@ -197,85 +183,6 @@ export default function Navbar() {
                       </p>
                     </div>
                     
-                    <div className={styles.dropdownDivider}></div>
-
-                    {session?.user?.role === 'USER' && (
-                      <>
-                        <Link 
-                          href="/citizen/messages" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <Mail size={16} />
-                          {t.messages}
-                        </Link>
-                        <Link 
-                          href="/citizen/bookmarks" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <Bookmark size={16} />
-                          {t.bookmarks}
-                        </Link>
-                        <Link 
-                          href="/citizen/certificates" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <FileText size={16} />
-                          {t.certificates}
-                        </Link>
-                        <Link 
-                          href="/citizen/badges" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <Award size={16} />
-                          {t.badges}
-                        </Link>
-                        <Link 
-                          href="/citizen/dashboard" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <LayoutDashboard size={16} />
-                          {t.elderDashboard}
-                        </Link>
-                      </>
-                    )}
-
-                    {session?.user?.role === 'ELDER' && (
-                      <>
-                        <Link 
-                          href="/elder/messages" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <Mail size={16} />
-                          {t.messages}
-                        </Link>
-                        <Link 
-                          href="/elder/dashboard" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <LayoutDashboard size={16} />
-                          {t.elderDashboard}
-                        </Link>
-                      </>
-                    )}
-
-                    {session.user.role === 'ADMIN' && (
-                      <Link 
-                        href="/admin" 
-                        className={styles.dropdownItem}
-                        onClick={() => setProfileMenuOpen(false)}
-                      >
-                        <Award size={16} />
-                        {t.admin}
-                      </Link>
-                    )}
-
                     <div className={styles.dropdownDivider}></div>
 
                     <Link 
