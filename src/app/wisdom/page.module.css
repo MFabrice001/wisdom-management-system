@@ -314,21 +314,30 @@
 
 /* Wisdom Card */
 .wisdomCard {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   backdrop-filter: blur(25px);
   border-radius: 1.5rem;
   box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(34, 197, 94, 0.1),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    0 20px 40px rgba(102, 126, 234, 0.15),
+    0 0 0 1px rgba(102, 126, 234, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.5);
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   text-decoration: none;
-  border: 1px solid rgba(34, 197, 94, 0.1);
+  border: 2px solid transparent;
   height: 100%;
   position: relative;
+}
+
+.wisdomCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 
+    0 30px 60px rgba(102, 126, 234, 0.25),
+    0 0 0 2px rgba(102, 126, 234, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.5);
+  border-color: rgba(102, 126, 234, 0.3);
 }
 
 .wisdomCard::before {
@@ -401,17 +410,17 @@
 }
 
 .categoryBadge {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.5rem 1rem;
   border-radius: 9999px;
   text-transform: capitalize;
   box-shadow: 
-    0 4px 12px rgba(34, 197, 94, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+    0 4px 12px rgba(102, 126, 234, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(102, 126, 234, 0.3);
 }
 
 .languageBadge {
@@ -426,11 +435,14 @@
 }
 
 .cardTitle {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 1.25rem 0.75rem;
-  line-height: 1.3;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -438,21 +450,26 @@
   font-family: 'Inter', sans-serif;
   position: relative;
   z-index: 1;
+  letter-spacing: -0.02em;
 }
 
 .cardContent {
   color: #4b5563;
   margin: 0 1.25rem 1rem;
-  font-size: 0.875rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.7;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex-grow: 1;
   font-weight: 400;
   position: relative;
   z-index: 1;
+  padding: 0.75rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(247,250,252,0.5) 100%);
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
 }
 
 .cardDocument {

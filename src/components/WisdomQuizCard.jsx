@@ -69,7 +69,11 @@ export default function WisdomQuizCard({ quiz }) {
             return (
               <button
                 key={index}
-                onClick={() => handleAnswer(option)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAnswer(option);
+                }}
                 className={optionClass}
                 disabled={showResult || submitting}
               >
