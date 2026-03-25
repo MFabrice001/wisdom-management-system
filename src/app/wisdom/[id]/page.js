@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import ShareModal from '@/components/ShareModal';
 import WisdomQuiz from '@/components/WisdomQuiz';
-import WisdomVideo from '@/components/WisdomVideo';
 import styles from './WisdomDetail.module.css';
 
 export default function WisdomDetailPage({ params }) {
@@ -330,15 +329,6 @@ export default function WisdomDetailPage({ params }) {
                   </span>
                 ))}
               </div>
-            )}
-
-            {/* Video/Reels Section */}
-            {wisdom.videoUrl && (
-              <WisdomVideo 
-                videoUrl={wisdom.videoUrl} 
-                videoThumbnail={wisdom.videoThumbnail}
-                title={wisdom.title}
-              />
             )}
 
             {/* Quiz Section for Youth */}

@@ -255,7 +255,10 @@ export default function ReelsPage() {
                 <Heart size={28} fill={liked[currentReel.id] ? 'currentColor' : 'none'} />
                 <span>{currentReel._count?.likes || 0}</span>
               </button>
-              <button className={styles.actionButton}>
+              <button 
+                className={styles.actionButton}
+                onClick={() => router.push(`/wisdom/${currentReel.id}`)}
+              >
                 <MessageCircle size={28} />
                 <span>{currentReel._count?.comments || 0}</span>
               </button>

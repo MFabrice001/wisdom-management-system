@@ -351,21 +351,6 @@ function WisdomCard({ wisdom, onShare }) {
         <span className={styles.languageBadge}>
           {wisdom.language}
         </span>
-        {/* Video/Quiz Indicators for Youth */}
-        {(wisdom.videoUrl || (wisdom.quizzes && wisdom.quizzes.length > 0)) && (
-          <div className={styles.youthIndicators}>
-            {wisdom.videoUrl && (
-              <Link href="/reels" className={styles.videoIndicator} title="Watch in Reels">
-                <Video size={12} /> Reels
-              </Link>
-            )}
-            {(wisdom.quizzes && wisdom.quizzes.length > 0) && (
-              <span className={styles.quizIndicator} title="Has Quiz">
-                <Brain size={12} /> Quiz
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Title */}
