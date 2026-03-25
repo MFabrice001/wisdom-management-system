@@ -53,8 +53,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 1rem;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-  z-index: 1000;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  z-index: 100;
 }
 
 .header h1 {
@@ -64,22 +64,20 @@
 .navLinks {
   display: flex;
   gap: 1rem;
-  z-index: 1001;
 }
 
 .navLink {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255,255,255,0.8);
   text-decoration: none;
   font-size: 0.875rem;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   transition: all 0.2s;
-  font-weight: 500;
 }
 
 .navLink:hover {
   color: white;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
 }
 
 .homeButton {
@@ -96,7 +94,6 @@
   transition: background 0.2s;
   text-decoration: none;
   font-size: 1.25rem;
-  z-index: 1001;
 }
 
 .homeButton:hover {
@@ -111,7 +108,6 @@
   border-radius: 20px;
   font-size: 0.875rem;
   transition: background 0.2s;
-  z-index: 1001;
 }
 
 .uploadLink:hover {
