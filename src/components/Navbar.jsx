@@ -33,6 +33,7 @@ export default function Navbar() {
       logout: 'Logout',
       admin: 'Admin',
       elderDashboard: 'Dashboard',
+      citizenDashboard: 'Dashboard',
       suggestions: 'Suggestions', 
       meetings: 'Live',
       forum: 'Forum',
@@ -56,6 +57,7 @@ export default function Navbar() {
       logout: 'Sohoka',
       admin: 'Ubuyobozi',
       elderDashboard: 'Ikibuga',
+      citizenDashboard: 'Ikibuga',
       suggestions: 'Ibitekerezo', 
       meetings: 'Mbonankubone',
       forum: 'Uruganiriro',
@@ -123,6 +125,13 @@ export default function Navbar() {
             {session?.user?.role === 'USER' && (
               <>
                 <Link 
+                  href="/citizen/dashboard" 
+                  className={`${styles.navLink} ${pathname === '/citizen/dashboard' ? styles.active : ''}`}
+                >
+                  <LayoutDashboard size={18} />
+                  {t.citizenDashboard}
+                </Link>
+                <Link 
                   href="/citizen/forum" 
                   className={`${styles.navLink} ${pathname === '/citizen/forum' ? styles.active : ''}`}
                 >
@@ -188,6 +197,85 @@ export default function Navbar() {
                       </p>
                     </div>
                     
+                    <div className={styles.dropdownDivider}></div>
+
+                    {session?.user?.role === 'USER' && (
+                      <>
+                        <Link 
+                          href="/citizen/messages" 
+                          className={styles.dropdownItem}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <Mail size={16} />
+                          {t.messages}
+                        </Link>
+                        <Link 
+                          href="/citizen/bookmarks" 
+                          className={styles.dropdownItem}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <Bookmark size={16} />
+                          {t.bookmarks}
+                        </Link>
+                        <Link 
+                          href="/citizen/certificates" 
+                          className={styles.dropdownItem}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <FileText size={16} />
+                          {t.certificates}
+                        </Link>
+                        <Link 
+                          href="/citizen/badges" 
+                          className={styles.dropdownItem}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <Award size={16} />
+                          {t.badges}
+                        </Link>
+                        <Link 
+                          href="/citizen/dashboard" 
+                          className={styles.dropdownItem}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <LayoutDashboard size={16} />
+                          {t.elderDashboard}
+                        </Link>
+                      </>
+                    )}
+
+                    {session?.user?.role === 'ELDER' && (
+                      <>
+                        <Link 
+                          href="/elder/messages" 
+                          className={styles.dropdownItem}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <Mail size={16} />
+                          {t.messages}
+                        </Link>
+                        <Link 
+                          href="/elder/dashboard" 
+                          className={styles.dropdownItem}
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <LayoutDashboard size={16} />
+                          {t.elderDashboard}
+                        </Link>
+                      </>
+                    )}
+
+                    {session.user.role === 'ADMIN' && (
+                      <Link 
+                        href="/admin" 
+                        className={styles.dropdownItem}
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <Award size={16} />
+                        {t.admin}
+                      </Link>
+                    )}
+
                     <div className={styles.dropdownDivider}></div>
 
                     <Link 
@@ -268,6 +356,24 @@ export default function Navbar() {
                   </Link>
                   <Link href="/citizen/quiz" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
                     <BrainCircuit size={18} /> {t.quiz}
+                  </Link>
+                  <Link href="/citizen/dashboard" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
+                    <LayoutDashboard size={18} /> Dashboard
+                  </Link>
+                  <Link href="/citizen/messages" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
+                    <Mail size={18} /> {t.messages}
+                  </Link>
+                  <Link href="/citizen/bookmarks" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
+                    <Bookmark size={18} /> {t.bookmarks}
+                  </Link>
+                  <Link href="/citizen/certificates" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
+                    <FileText size={18} /> {t.certificates}
+                  </Link>
+                  <Link href="/citizen/badges" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
+                    <Award size={18} /> {t.badges}
+                  </Link>
+                  <Link href="/citizen/suggestions" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
+                    <MessageSquare size={18} /> {t.suggestions}
                   </Link>
                 </>
               )}
