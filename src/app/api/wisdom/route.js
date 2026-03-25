@@ -73,6 +73,11 @@ export async function POST(request) {
     const title = formData.get('title');
     const content = formData.get('content');
     const category = formData.get('category');
+    
+    console.log('Received form data:');
+    console.log('title:', title);
+    console.log('content:', content);
+    console.log('category:', category);
     const language = formData.get('language');
     const tags = formData.get('tags') ? JSON.parse(formData.get('tags')) : [];
     const images = formData.get('images') ? JSON.parse(formData.get('images')) : [];

@@ -926,21 +926,28 @@ function UploadVideoForm() {
     try {
       const formData = new FormData();
       formData.append('video', videoFile);
+      // Map video form fields to wisdom API required fields
       formData.append('title', title);
-      formData.append('description', description);
+      formData.append('content', description || 'Video content');
+      formData.append('category', 'STORY'); // Default category for videos
+      formData.append('language', 'KINYARWANDA');
 
       const response = await fetch('/api/wisdom', {
         method: 'POST',
         body: formData,
       });
 
+      const data = await response.json();
+
+      console.log('Upload response:', response.status, data);
+
       if (response.ok) {
         setUploadSuccess(true);
       } else {
-        const data = await response.json();
         setError(data.error || 'Failed to upload video');
       }
     } catch (err) {
+      console.error('Upload error:', err);
       setError('Error uploading video');
     } finally {
       setUploading(false);
