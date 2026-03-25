@@ -352,7 +352,7 @@
 
 .dropdownMenu {
   position: absolute;
-  bottom: calc(100% + 0.5rem);
+  top: calc(100% + 0.75rem);
   right: 0;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
   border-radius: 1rem;
@@ -367,13 +367,20 @@
   z-index: 100;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  animation: dropdownSlideUp 0.2s ease-out;
+  animation: dropdownSlide 0.2s ease-out;
 }
 
-@keyframes dropdownSlideUp {
+@media (min-width: 640px) {
+  .dropdownMenu {
+    border-radius: 1.25rem;
+    min-width: 280px;
+  }
+}
+
+@keyframes dropdownSlide {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.95);
+    transform: translateY(-10px) scale(0.95);
   }
   to {
     opacity: 1;
