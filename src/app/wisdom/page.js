@@ -383,12 +383,10 @@ function WisdomCard({ wisdom, onShare }) {
         </div>
       )}
 
-      {/* Quiz Section - Show all questions directly on card */}
+      {/* Quiz Section - Show one question at a time on card */}
       {wisdom.quizzes && wisdom.quizzes.length > 0 && (
         <div className={styles.quizSection}>
-          {wisdom.quizzes.map((quiz, index) => (
-            <WisdomQuizCard key={index} quiz={quiz} />
-          ))}
+          <WisdomQuizCard quizzes={wisdom.quizzes} />
         </div>
       )}
 

@@ -2,14 +2,18 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Brain, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Brain, CheckCircle, XCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import styles from './WisdomQuizCard.module.css';
 
-export default function WisdomQuizCard({ quiz }) {
+export default function WisdomQuizCard({ quizzes }) {
   const { data: session } = useSession();
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const quiz = quizzes[currentQuestion];
+  const isCorrect = selectedAnswer === quiz?.correctAnswer;
 
   const handleAnswer = async (option) => {
     if (showResult || submitting) return;
@@ -18,7 +22,7 @@ export default function WisdomQuizCard({ quiz }) {
     setShowResult(true);
     setSubmitting(true);
 
-    const isCorrect = option === quiz.correctAnswer;
+    const isAnswerCorrect = option === quiz.correctAnswer;
     
     // Save attempt to API if user is logged in
     if (session?.user) {
@@ -29,7 +33,7 @@ export default function WisdomQuizCard({ quiz }) {
           body: JSON.stringify({
             quizId: quiz.id,
             selectedAnswer: option,
-            isCorrect
+            isCorrect: isAnswerCorrect
           })
         });
       } catch (error) {
@@ -40,10 +44,55 @@ export default function WisdomQuizCard({ quiz }) {
     setSubmitting(false);
   };
 
-  const isCorrect = selectedAnswer === quiz?.correctAnswer;
+  const handleNext = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (currentQuestion < quizzes.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+    }
+  };
+
+  const handlePrevious = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (currentQuestion > 0) {
+      setCurrentQuestion(prev => prev - 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+    }
+  };
+
+  const handleRetry = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setSelectedAnswer(null);
+    setShowResult(false);
+  };
+
+  if (!quiz) return null;
+
+  const progress = ((currentQuestion + 1) / quizzes.length) * 100;
 
   return (
     <div className={styles.quizCard}>
+      {/* Progress indicator */}
+      <div className={styles.progressWrapper}>
+        <div className={styles.progressBar}>
+          <div className={styles.progressFill} style={{ width: `${progress}%` }}></div>
+        </div>
+        <span className={styles.progressText}>
+          {currentQuestion + 1} / {quizzes.length}
+        </span>
+      </div>
+      
       <div className={styles.quizHeader}>
         <Brain size={18} />
         <span className={styles.quizLabel}>Ibisakuzo (Quiz)</span>
@@ -121,19 +170,33 @@ export default function WisdomQuizCard({ quiz }) {
           </div>
         )}
 
-        {showResult && (
+        {/* Navigation buttons */}
+        <div className={styles.navButtons}>
           <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setSelectedAnswer(null);
-              setShowResult(false);
-            }} 
-            className={styles.retryButton}
+            onClick={handlePrevious}
+            disabled={currentQuestion === 0}
+            className={styles.navButton}
           >
-            Try Again / Gerageza
+            <ChevronLeft size={16} /> Previous
           </button>
-        )}
+
+          {showResult ? (
+            <button 
+              onClick={handleRetry}
+              className={styles.retryButton}
+            >
+              Try Again / Gerageza
+            </button>
+          ) : null}
+
+          <button 
+            onClick={handleNext}
+            disabled={currentQuestion === quizzes.length - 1}
+            className={styles.navButton}
+          >
+            Next <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
