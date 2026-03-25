@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Play, Pause, Heart, MessageCircle, Share2, ChevronUp, ChevronDown, X, Loader2, User } from 'lucide-react';
+import { Play, Pause, Heart, MessageCircle, Share2, ChevronUp, ChevronDown, Loader2, User } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import styles from './page.module.css';
 
@@ -175,32 +175,15 @@ export default function ReelsPage() {
       {/* Header with Navigation */}
       <div className={styles.header}>
         <Link href="/" className={styles.homeButton}>
-          <X size={24} />
+          🏠
         </Link>
-        <h1>Reels</h1>
-        <div className={styles.headerRight}>
-          <Link href="/wisdom/add" className={styles.uploadLink}>
-            + Upload
-          </Link>
-          <div className={styles.counter}>
-            {currentIndex + 1} / {reels.length}
-          </div>
+        <div className={styles.navLinks}>
+          <Link href="/wisdom" className={styles.navLink}>Wisdom</Link>
+          <Link href="/polls" className={styles.navLink}>Polls</Link>
+          <Link href="/contributors" className={styles.navLink}>Contributors</Link>
         </div>
-      </div>
-
-      {/* Quick Navigation Bar */}
-      <div className={styles.quickNav}>
-        <Link href="/" className={styles.quickNavItem}>
-          🏠 Home
-        </Link>
-        <Link href="/wisdom" className={styles.quickNavItem}>
-          📚 Wisdom
-        </Link>
-        <Link href="/polls" className={styles.quickNavItem}>
-          📊 Polls
-        </Link>
-        <Link href="/contributors" className={styles.quickNavItem}>
-          👥 Contributors
+        <Link href="/wisdom/add" className={styles.uploadLink}>
+          + Upload
         </Link>
       </div>
 

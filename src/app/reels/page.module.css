@@ -43,16 +43,41 @@
   background: rgba(255,255,255,0.3);
 }
 
-.counter {
-  color: rgba(255,255,255,0.8);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.headerRight {
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  z-index: 100;
+}
+
+.header h1 {
+  display: none;
+}
+
+.navLinks {
+  display: flex;
   gap: 1rem;
+}
+
+.navLink {
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.navLink:hover {
+  color: white;
+  background: rgba(255,255,255,0.1);
 }
 
 .homeButton {
@@ -68,6 +93,7 @@
   cursor: pointer;
   transition: background 0.2s;
   text-decoration: none;
+  font-size: 1.25rem;
 }
 
 .homeButton:hover {
@@ -86,34 +112,6 @@
 
 .uploadLink:hover {
   background: rgba(255,255,255,0.3);
-}
-
-/* Quick Navigation Bar */
-.quickNav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  padding: 0.75rem 0.5rem;
-  background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-  z-index: 100;
-}
-
-.quickNavItem {
-  color: rgba(255,255,255,0.7);
-  text-decoration: none;
-  font-size: 0.75rem;
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.quickNavItem:hover {
-  color: white;
-  background: rgba(255,255,255,0.1);
 }
 
 /* Loading State */
