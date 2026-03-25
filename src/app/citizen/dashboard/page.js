@@ -60,7 +60,7 @@ export default function CitizenDashboard() {
     }
   };
 
-  const t = translations[language];
+  const t = translations[language] || translations.en;
 
   useEffect(() => {
     async function fetchData() {

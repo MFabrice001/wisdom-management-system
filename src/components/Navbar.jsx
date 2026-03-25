@@ -71,7 +71,7 @@ export default function Navbar() {
     }
   };
 
-  const t = translations[language];
+  const t = translations[language] || translations.en;
 
   return (
     <nav className={styles.navbar}>
