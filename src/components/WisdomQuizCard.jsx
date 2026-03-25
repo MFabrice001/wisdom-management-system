@@ -120,6 +120,20 @@ export default function WisdomQuizCard({ quiz }) {
             )}
           </div>
         )}
+
+        {showResult && (
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedAnswer(null);
+              setShowResult(false);
+            }} 
+            className={styles.retryButton}
+          >
+            Try Again / Gerageza
+          </button>
+        )}
       </div>
     </div>
   );

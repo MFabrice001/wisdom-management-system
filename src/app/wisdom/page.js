@@ -383,9 +383,13 @@ function WisdomCard({ wisdom, onShare }) {
         </div>
       )}
 
-      {/* Quiz Section - Show first question directly on card */}
+      {/* Quiz Section - Show all questions directly on card */}
       {wisdom.quizzes && wisdom.quizzes.length > 0 && (
-        <WisdomQuizCard quiz={wisdom.quizzes[0]} />
+        <div className={styles.quizSection}>
+          {wisdom.quizzes.map((quiz, index) => (
+            <WisdomQuizCard key={index} quiz={quiz} />
+          ))}
+        </div>
       )}
 
       {/* Footer */}

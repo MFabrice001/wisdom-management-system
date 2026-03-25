@@ -768,3 +768,7 @@
   font-size: 0.7rem;
   font-weight: 600;
 }
+
+.quizSection {
+  padding: 0 1.25rem 1rem;
+}
