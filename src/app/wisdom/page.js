@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Filter, Plus, BookOpen, Heart, MessageCircle, Eye, Loader2, Share2, FileText } from 'lucide-react';
+import { Search, Filter, Plus, BookOpen, Heart, MessageCircle, Eye, Loader2, Share2, FileText, Video, Brain } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import ShareModal from '@/components/ShareModal';
 import styles from './page.module.css';
@@ -351,6 +351,21 @@ function WisdomCard({ wisdom, onShare }) {
         <span className={styles.languageBadge}>
           {wisdom.language}
         </span>
+        {/* Video/Quiz Indicators for Youth */}
+        {(wisdom.videoUrl || (wisdom.quizzes && wisdom.quizzes.length > 0)) && (
+          <div className={styles.youthIndicators}>
+            {wisdom.videoUrl && (
+              <span className={styles.videoIndicator} title="Has Video/Reels">
+                <Video size={12} /> Reels
+              </span>
+            )}
+            {(wisdom.quizzes && wisdom.quizzes.length > 0) && (
+              <span className={styles.quizIndicator} title="Has Quiz">
+                <Brain size={12} /> Quiz
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Title */}

@@ -706,3 +706,36 @@
   opacity: 1;
   animation: shine 0.6s ease-in-out;
 }
+/* Youth Content Indicators */
+.youthIndicators {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.videoIndicator,
+.quizIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.videoIndicator {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  color: white;
+}
+
+.quizIndicator {
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  color: white;
+}
+
+.videoIndicator svg,
+.quizIndicator svg {
+  width: 12px;
+  height: 12px;
+}

@@ -321,7 +321,10 @@ export default function AddWisdomPage() {
           submitData.append('document', formData[key]);
         } else if (key === 'videoFile' && formData[key]) {
           submitData.append('video', formData[key]);
-        } else if (key !== 'documentFile' && key !== 'videoFile') {
+        } else if (key === 'audioUrl' && formData[key] instanceof Blob) {
+          // Handle audio blob - would need additional upload handling
+          submitData.append(key, formData[key]);
+        } else if (key !== 'documentFile' && key !== 'videoFile' && key !== 'audioUrl') {
           submitData.append(key, formData[key]);
         }
       });

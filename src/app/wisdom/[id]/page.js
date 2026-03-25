@@ -45,9 +45,10 @@ export default function WisdomDetailPage({ params }) {
       const response = await fetch(`/api/wisdom/${wisdomId}`);
       if (response.ok) {
         const data = await response.json();
-        setWisdom(data.wisdom);
-        setComments(data.wisdom.comments || []);
-        setLikeCount(data.wisdom._count?.likes || 0);
+        // Safely handle wisdom data that might be null
+        setWisdom(data.wisdom || null);
+        setComments(data.wisdom?.comments || []);
+        setLikeCount(data.wisdom?._count?.likes || 0);
         setIsLiked(data.isLiked || false);
         setIsBookmarked(data.isBookmarked || false);
       } else {
@@ -187,7 +188,7 @@ export default function WisdomDetailPage({ params }) {
     );
   }
 
-  if (!wisdom) {
+  if (!wisdom || !wisdom.title) {
     return (
       <div className={styles.notFoundContainer}>
         <div className={styles.notFoundContent}>
@@ -330,6 +331,18 @@ export default function WisdomDetailPage({ params }) {
                 ))}
               </div>
             )}
+
+            {/* Video/Reels Section */}
+            {wisdom.videoUrl && (
+              <WisdomVideo 
+                videoUrl={wisdom.videoUrl} 
+                videoThumbnail={wisdom.videoThumbnail}
+                title={wisdom.title}
+              />
+            )}
+
+            {/* Quiz Section for Youth */}
+            <WisdomQuiz wisdom={wisdom} />
           </div>
 
           {/* Actions Bar */}
@@ -461,7 +474,7 @@ export default function WisdomDetailPage({ params }) {
       </div>
 
       {/* Share Modal */}
-      {wisdom && (
+      {wisdom && wisdom.title && (
         <ShareModal 
           isOpen={isShareModalOpen} 
           onClose={() => setIsShareModalOpen(false)} 
