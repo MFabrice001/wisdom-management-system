@@ -200,61 +200,6 @@ export default function Navbar() {
                           <Mail size={16} />
                           {t.messages}
                         </Link>
-                        <Link 
-                          href="/citizen/bookmarks" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <Bookmark size={16} />
-                          {t.bookmarks}
-                        </Link>
-                        
-                        {/* New Request Link */}
-                        <Link 
-                          href="/citizen/requests" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <HelpCircle size={16} />
-                          {t.requests}
-                        </Link>
-
-                        {/* My Requests Inbox Link */}
-                        <Link 
-                          href="/citizen/my-requests" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <List size={16} />
-                          {t.myRequests}
-                        </Link>
-
-                        <Link 
-                          href="/citizen/certificates" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <FileText size={16} />
-                          {t.certificates}
-                        </Link>
-
-                        <Link 
-                          href="/citizen/badges" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <Award size={16} />
-                          {t.badges}
-                        </Link>
-
-                        <Link 
-                          href="/citizen/suggestions" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <MessageSquare size={16} />
-                          {t.suggestions}
-                        </Link>
                       </>
                     )}
 
@@ -275,22 +220,6 @@ export default function Navbar() {
                         >
                           <LayoutDashboard size={16} />
                           {t.elderDashboard}
-                        </Link>
-                        <Link 
-                          href="/elder/meetings" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <Video size={16} />
-                          {t.meetings}
-                        </Link>
-                        <Link 
-                          href="/elder/suggestions" 
-                          className={styles.dropdownItem}
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          <MessageSquare size={16} />
-                          {t.suggestions}
                         </Link>
                       </>
                     )}
