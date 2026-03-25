@@ -40,7 +40,10 @@ export async function GET(request) {
         quizzes: {
           select: {
             id: true,
-            question: true
+            question: true,
+            options: true,
+            correctAnswer: true,
+            explanation: true
           }
         }
       }

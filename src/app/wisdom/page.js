@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Search, Filter, Plus, BookOpen, Heart, MessageCircle, Eye, Loader2, Share2, FileText, Video, Brain } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import ShareModal from '@/components/ShareModal';
+import WisdomQuizCard from '@/components/WisdomQuizCard';
 import styles from './page.module.css';
 
 // Wrapper for Suspense
@@ -351,6 +352,12 @@ function WisdomCard({ wisdom, onShare }) {
         <span className={styles.languageBadge}>
           {wisdom.language}
         </span>
+        {wisdom.quizzes && wisdom.quizzes.length > 0 && (
+          <span className={styles.quizBadge}>
+            <Brain size={12} />
+            {wisdom.quizzes.length} Ibisakuzo
+          </span>
+        )}
       </div>
 
       {/* Title */}
@@ -374,6 +381,11 @@ function WisdomCard({ wisdom, onShare }) {
             <span key={index} className={styles.tag}>#{tag}</span>
           ))}
         </div>
+      )}
+
+      {/* Quiz Section - Show first question directly on card */}
+      {wisdom.quizzes && wisdom.quizzes.length > 0 && (
+        <WisdomQuizCard quiz={wisdom.quizzes[0]} />
       )}
 
       {/* Footer */}
