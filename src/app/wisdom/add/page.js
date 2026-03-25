@@ -929,7 +929,7 @@ function UploadVideoForm() {
       // Map video form fields to wisdom API required fields
       formData.append('title', title);
       formData.append('content', description || 'Video content');
-      formData.append('category', 'STORY'); // Default category for videos
+      formData.append('category', 'STORIES'); // Default category for videos
       formData.append('language', 'KINYARWANDA');
 
       const response = await fetch('/api/wisdom', {
