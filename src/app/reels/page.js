@@ -17,6 +17,10 @@ export default function ReelsPage() {
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(true);
   const [liked, setLiked] = useState({});
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const videoRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -133,6 +137,63 @@ export default function ReelsPage() {
     } else {
       navigator.clipboard.writeText(`${window.location.origin}/wisdom/${reel.id}`);
       alert('Link copied to clipboard!');
+    }
+  };
+
+  const handleCommentToggle = async (reelId) => {
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+    
+    if (!showComments) {
+      // Fetch comments for this reel
+      try {
+        const response = await fetch(`/api/wisdom/${reelId}/comment`);
+        if (response.ok) {
+          const data = await response.json();
+          setComments(prev => ({ ...prev, [reelId]: data.comments || [] }));
+        }
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      }
+    }
+    setShowComments(!showComments);
+  };
+
+  const handleSubmitComment = async (reelId) => {
+    if (!commentText.trim()) return;
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/wisdom/${reelId}/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentText })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setComments(prev => ({
+          ...prev,
+          [reelId]: [...(prev[reelId] || []), data.comment]
+        }));
+        setCommentText('');
+        // Update comment count
+        setReels(prev => prev.map(r => 
+          r.id === reelId 
+            ? { ...r, _count: { ...r._count, comments: (r._count?.comments || 0) + 1 } }
+            : r
+        ));
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -257,7 +318,7 @@ export default function ReelsPage() {
               </button>
               <button 
                 className={styles.actionButton}
-                onClick={() => router.push(`/wisdom/${currentReel.id}`)}
+                onClick={() => handleCommentToggle(currentReel.id)}
               >
                 <MessageCircle size={28} />
                 <span>{currentReel._count?.comments || 0}</span>
@@ -266,6 +327,50 @@ export default function ReelsPage() {
                 <Share2 size={28} />
               </button>
             </div>
+
+            {/* Inline Comments Section */}
+            {showComments && (
+              <div className={styles.commentsSection}>
+                <div className={styles.commentsHeader}>
+                  <h4>Comments</h4>
+                  <button 
+                    className={styles.closeComments}
+                    onClick={() => setShowComments(false)}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className={styles.commentsList}>
+                  {(comments[currentReel.id] || []).length > 0 ? (
+                    comments[currentReel.id].map((comment, idx) => (
+                      <div key={idx} className={styles.commentItem}>
+                        <div className={styles.commentAuthor}>{comment.author?.name || 'Anonymous'}</div>
+                        <div className={styles.commentContent}>{comment.content}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className={styles.noComments}>No comments yet. Be the first!</p>
+                  )}
+                </div>
+                <div className={styles.commentForm}>
+                  <input
+                    type="text"
+                    placeholder="Write a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className={styles.commentInput}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSubmitComment(currentReel.id)}
+                  />
+                  <button 
+                    className={styles.submitComment}
+                    onClick={() => handleSubmitComment(currentReel.id)}
+                    disabled={submitting || !commentText.trim()}
+                  >
+                    {submitting ? '...' : 'Post'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

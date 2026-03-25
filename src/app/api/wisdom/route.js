@@ -14,6 +14,7 @@ export async function GET(request) {
     // Build filter conditions
     const where = {
       isPublished: true,
+      videoUrl: null, // Exclude reel entries from wisdom library
       ...(category && category !== 'ALL' && { category }),
       ...(language && language !== 'ALL' && { language })
     };
