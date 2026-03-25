@@ -34,6 +34,13 @@ export async function GET(request) {
             likes: true,
             comments: true
           }
+        },
+        // Include quizzes for youth engagement indicators
+        quizzes: {
+          select: {
+            id: true,
+            question: true
+          }
         }
       }
     });

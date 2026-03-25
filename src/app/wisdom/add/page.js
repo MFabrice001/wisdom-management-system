@@ -16,6 +16,9 @@ export default function AddWisdomPage() {
   const [success, setSuccess] = useState(false);
   const [tagInput, setTagInput] = useState('');
   
+  // Selection state for choosing between video upload or wisdom sharing
+  const [contentType, setContentType] = useState(null); // null = show selection, 'video' = video form, 'wisdom' = wisdom form
+  
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -365,12 +368,76 @@ export default function AddWisdomPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Share Your Wisdom</h1>
-          <p className={styles.subtitle}>Contribute to preserving our cultural heritage</p>
-        </div>
+        {/* Selection Screen - Show first to choose content type */}
+        {contentType === null && (
+          <div className={styles.selectionContainer}>
+            <div className={styles.header}>
+              <h1 className={styles.title}>Share Your Wisdom</h1>
+              <p className={styles.subtitle}>Choose how you want to share with the community</p>
+            </div>
 
-        <div className={styles.form}>
+            <div className={styles.selectionGrid}>
+              {/* Option 1: Upload Reels/Short Videos */}
+              <button 
+                className={styles.selectionCard}
+                onClick={() => setContentType('video')}
+              >
+                <div className={styles.selectionIcon}>
+                  <Video size={48} />
+                </div>
+                <h3>Upload Reels</h3>
+                <p>Share short videos - youth users can watch them as Reels (TikTok/Instagram style)</p>
+              </button>
+
+              {/* Option 2: Share Traditional Wisdom */}
+              <button 
+                className={styles.selectionCard}
+                onClick={() => setContentType('wisdom')}
+              >
+                <div className={styles.selectionIcon}>
+                  <Brain size={48} />
+                </div>
+                <h3>Share Wisdom</h3>
+                <p>Share traditional knowledge, stories, proverbs, and cultural wisdom</p>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Video Upload Form */}
+        {contentType === 'video' && (
+          <div className={styles.formContainer}>
+            <button 
+              className={styles.backButton}
+              onClick={() => setContentType(null)}
+            >
+              <X size={20} />
+              Back to Selection
+            </button>
+            <div className={styles.header}>
+              <h1 className={styles.title}>Upload Reels</h1>
+              <p className={styles.subtitle}>Share short videos with the community</p>
+            </div>
+            <UploadVideoForm />
+          </div>
+        )}
+
+        {/* Traditional Wisdom Form */}
+        {contentType === 'wisdom' && (
+          <>
+            <button 
+              className={styles.backButton}
+              onClick={() => setContentType(null)}
+            >
+              <X size={20} />
+              Back to Selection
+            </button>
+            <div className={styles.header}>
+              <h1 className={styles.title}>Share Your Wisdom</h1>
+              <p className={styles.subtitle}>Contribute to preserving our cultural heritage</p>
+            </div>
+
+            <div className={styles.form}>
           {success && (
             <div className={styles.success}>
               <CheckCircle size={20} />
@@ -812,7 +879,178 @@ export default function AddWisdomPage() {
             </div>
           </form>
         </div>
+        </>
+        )}
       </div>
+    </div>
+  );
+}
+
+// Video Upload Form Component
+function UploadVideoForm() {
+  const [videoFile, setVideoFile] = useState(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please select a video file (.mp4, .webm, .mov)');
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      setError('Video size must be less than 50MB');
+      return;
+    }
+
+    setError('');
+    setVideoFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!videoFile || !title.trim()) {
+      setError('Please select a video and provide a title');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('video', videoFile);
+      formData.append('title', title);
+      formData.append('description', description);
+
+      const response = await fetch('/api/wisdom', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setUploadSuccess(true);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to upload video');
+      }
+    } catch (err) {
+      setError('Error uploading video');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (uploadSuccess) {
+    return (
+      <div className={styles.success}>
+        <CheckCircle size={48} />
+        <h3>Reel Uploaded Successfully!</h3>
+        <p>Your video has been shared with the community.</p>
+        <button 
+          className={styles.submitButton}
+          onClick={() => {
+            setVideoFile(null);
+            setTitle('');
+            setDescription('');
+            setUploadSuccess(false);
+          }}
+        >
+          Upload Another
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.videoForm}>
+      {error && (
+        <div className={styles.error}>
+          <AlertCircle size={20} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className={styles.formGroup}>
+        <label className={styles.label}>Video File</label>
+        <div className={styles.videoUploadArea}>
+          {videoFile ? (
+            <div className={styles.videoPreview}>
+              <video src={URL.createObjectURL(videoFile)} controls />
+              <button 
+                type="button"
+                className={styles.removeVideo}
+                onClick={() => setVideoFile(null)}
+              >
+                <X size={16} /> Remove
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime"
+                onChange={handleVideoChange}
+                className={styles.fileInput}
+                id="videoUpload"
+              />
+              <label htmlFor="videoUpload" className={styles.videoUploadLabel}>
+                <Upload size={32} />
+                <span>Click to upload video</span>
+                <span className={styles.videoHint}>MP4, WebM, MOV - Max 50MB</span>
+              </label>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.label}>Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Give your reel a title..."
+          className={styles.input}
+          required
+        />
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.label}>Description (Optional)</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe what's in your video..."
+          className={styles.textarea}
+          rows={3}
+        />
+      </div>
+
+      <button 
+        type="button"
+        onClick={handleUpload}
+        disabled={uploading || !videoFile || !title.trim()}
+        className={styles.submitButton}
+      >
+        {uploading ? (
+          <>
+            <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+            <span>Uploading...</span>
+          </>
+        ) : (
+          <>
+            <Upload size={20} />
+            <span>Upload Reel</span>
+          </>
+        )}
+      </button>
     </div>
   );
 }
