@@ -125,12 +125,30 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Video size too large (Max 50MB)' }, { status: 400 });
       }
 
-      // Upload video to Vercel Blob
-      const videoBlob = await put(videoFile.name, videoFile, {
-        access: 'public',
-      });
-      
-      videoUrl = videoBlob.url;
+      // Check if BLOB_READ_WRITE_TOKEN is configured
+      if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        console.error('Missing BLOB_READ_WRITE_TOKEN environment variable');
+        return NextResponse.json(
+          { error: 'Server configuration error: Missing Blob Token. Please contact administrator.' },
+          { status: 500 }
+        );
+      }
+
+      try {
+        // Upload video to Vercel Blob
+        const videoBlob = await put(videoFile.name, videoFile, {
+          access: 'public',
+        });
+        
+        videoUrl = videoBlob.url;
+        console.log('Video uploaded successfully:', videoUrl);
+      } catch (blobError) {
+        console.error('Video upload error:', blobError);
+        return NextResponse.json(
+          { error: `Video upload failed: ${blobError.message}` },
+          { status: 500 }
+        );
+      }
     }
 
     // Create wisdom

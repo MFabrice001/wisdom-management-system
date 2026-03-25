@@ -213,9 +213,9 @@ export default function ReelsPage() {
           <div className={styles.videoOverlay}>
             <div className={styles.videoInfo}>
               <div className={styles.authorInfo}>
-                {currentReel.author?.image ? (
+                {currentReel.author?.profileImage ? (
                   <img 
-                    src={currentReel.author.image} 
+                    src={currentReel.author.profileImage} 
                     alt={currentReel.author.name}
                     className={styles.authorAvatar}
                   />
