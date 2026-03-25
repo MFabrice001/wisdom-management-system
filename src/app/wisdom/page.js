@@ -355,9 +355,9 @@ function WisdomCard({ wisdom, onShare }) {
         {(wisdom.videoUrl || (wisdom.quizzes && wisdom.quizzes.length > 0)) && (
           <div className={styles.youthIndicators}>
             {wisdom.videoUrl && (
-              <span className={styles.videoIndicator} title="Has Video/Reels">
+              <Link href="/reels" className={styles.videoIndicator} title="Watch in Reels">
                 <Video size={12} /> Reels
-              </span>
+              </Link>
             )}
             {(wisdom.quizzes && wisdom.quizzes.length > 0) && (
               <span className={styles.quizIndicator} title="Has Quiz">

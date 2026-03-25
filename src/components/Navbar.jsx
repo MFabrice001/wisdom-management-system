@@ -7,7 +7,8 @@ import { usePathname } from 'next/navigation';
 import { 
   Home, BookOpen, User, Menu, X, LogOut, Settings, 
   Award, Users, Globe, MessageSquare, Video, LayoutDashboard, 
-  MessagesSquare, Bookmark, HelpCircle, BrainCircuit, Mail, List, FileText
+  MessagesSquare, Bookmark, HelpCircle, BrainCircuit, Mail, List, FileText,
+  Play
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import styles from './Navbar.module.css';
@@ -151,6 +152,13 @@ export default function Navbar() {
             >
               <Award size={18} />
               {t.polls}
+            </Link>
+            <Link 
+              href="/reels" 
+              className={`${styles.navLink} ${pathname === '/reels' ? styles.active : ''}`}
+            >
+              <Play size={18} />
+              {t.reels || 'Reels'}
             </Link>
           </div>
 
@@ -418,6 +426,9 @@ export default function Navbar() {
               </Link>
               <Link href="/polls" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
                 <Award size={18} /> {t.polls}
+              </Link>
+              <Link href="/reels" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
+                <Play size={18} /> Reels
               </Link>
               <Link href="/about" className={styles.mobileMenuLink} onClick={() => setMobileMenuOpen(false)}>
                 <User size={18} /> {t.about}
